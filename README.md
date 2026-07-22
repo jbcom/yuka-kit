@@ -205,11 +205,13 @@ await runGovernedPlaythrough({
 ```
 
 When observations use normalized tile or meter coordinates while Solo renders
-Tiled pixels, configure the transfer boundary explicitly:
+Tiled pixels, configure both position and explicit speed conversion at the
+boundary:
 
 ```ts
 const adapter = new SoloCommandAdapter(runtime, {
   toRuntimePosition: ({ x, z }) => ({ x: x * 16, y: z * 16 }),
+  toRuntimeSpeed: (speed) => speed * 16,
 });
 ```
 

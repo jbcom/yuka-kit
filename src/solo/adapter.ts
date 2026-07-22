@@ -29,6 +29,8 @@ export interface SoloCommandAdapterOptions {
     arrivalTolerance?: number;
     /** Converts normalized Yuka XZ positions into the runtime's authored world units for map transfers. */
     toRuntimePosition?: (position: Vec3Like) => { x: number; y: number };
+    /** Converts an explicit Yuka movement speed into the runtime's authored units. */
+    toRuntimeSpeed?: (speed: number) => number;
 }
 
 export interface SoloDispatchOutcome {
@@ -67,6 +69,7 @@ export class SoloCommandAdapter {
     readonly #runtime: SoloRuntimeCommandPort;
     readonly #arrivalTolerance: number;
     readonly #toRuntimePosition: NonNullable<SoloCommandAdapterOptions['toRuntimePosition']>;
+    readonly #toRuntimeSpeed: NonNullable<SoloCommandAdapterOptions['toRuntimeSpeed']>;
 
     constructor(runtime: SoloRuntimeCommandPort, options: SoloCommandAdapterOptions = {}) {
         this.#runtime = runtime;
@@ -75,6 +78,7 @@ export class SoloCommandAdapter {
             x: position.x,
             y: position.z,
         }));
+        this.#toRuntimeSpeed = options.toRuntimeSpeed ?? ((speed) => speed);
     }
 
     commandFor(entityId: string, currentPosition: Vec3Like, intent: AgentIntent): SoloAICommand | undefined {
@@ -112,7 +116,7 @@ export class SoloCommandAdapter {
                     type: 'move',
                     entityId,
                     vector,
-                    ...(intent.speed === undefined ? {} : { speed: intent.speed }),
+                    ...(intent.speed === undefined ? {} : { speed: this.#toRuntimeSpeed(intent.speed) }),
                     source: 'ai',
                 };
             }
@@ -126,7 +130,7 @@ export class SoloCommandAdapter {
                     type: 'move',
                     entityId,
                     vector,
-                    ...(intent.speed === undefined ? {} : { speed: intent.speed }),
+                    ...(intent.speed === undefined ? {} : { speed: this.#toRuntimeSpeed(intent.speed) }),
                     source: 'ai',
                 };
             }

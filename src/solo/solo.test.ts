@@ -48,6 +48,24 @@ describe('RPGJS Solo command boundary', () => {
         });
     });
 
+    it('converts explicit Yuka movement speeds into Solo world units', () => {
+        const adapter = new SoloCommandAdapter({
+            dispatch: () => ({ accepted: true, tick: 0 }),
+        }, {
+            toRuntimeSpeed: (speed) => speed * 16,
+        });
+
+        expect(adapter.commandFor('hunter', { x: 1, y: 0, z: 1 }, {
+            kind: 'move-away',
+            from: { x: 0, y: 0, z: 1 },
+            speed: 1.15,
+        })).toMatchObject({
+            type: 'move',
+            speed: 18.4,
+            vector: { x: 1, y: 0 },
+        });
+    });
+
     it('bridges Yuka steering through authoritative Solo commands', () => {
         const commands: SoloAICommand[] = [];
         const adapter = new SoloCommandAdapter({
