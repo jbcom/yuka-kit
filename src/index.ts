@@ -59,6 +59,9 @@ export type {
 export { ClassGovernor, createClassGovernor } from './governors/index.js';
 export type {
     ClassGovernorOptions,
+    GovernorAction,
+    GovernorActionBinding,
+    GovernorActionName,
     GovernorActions,
     GovernorActorObservation,
     GovernorClass,
