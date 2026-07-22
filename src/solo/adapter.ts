@@ -27,6 +27,8 @@ export interface SoloRuntimeCommandPort {
 
 export interface SoloCommandAdapterOptions {
     arrivalTolerance?: number;
+    /** Converts normalized Yuka XZ positions into the runtime's authored world units for map transfers. */
+    toRuntimePosition?: (position: Vec3Like) => { x: number; y: number };
 }
 
 export interface SoloDispatchOutcome {
@@ -64,10 +66,15 @@ const normalize = (x: number, y: number): { x: number; y: number } | undefined =
 export class SoloCommandAdapter {
     readonly #runtime: SoloRuntimeCommandPort;
     readonly #arrivalTolerance: number;
+    readonly #toRuntimePosition: NonNullable<SoloCommandAdapterOptions['toRuntimePosition']>;
 
     constructor(runtime: SoloRuntimeCommandPort, options: SoloCommandAdapterOptions = {}) {
         this.#runtime = runtime;
         this.#arrivalTolerance = Math.max(0, options.arrivalTolerance ?? 0.25);
+        this.#toRuntimePosition = options.toRuntimePosition ?? ((position) => ({
+            x: position.x,
+            y: position.z,
+        }));
     }
 
     commandFor(entityId: string, currentPosition: Vec3Like, intent: AgentIntent): SoloAICommand | undefined {
@@ -91,7 +98,7 @@ export class SoloCommandAdapter {
                     type: 'transfer-map',
                     entityId,
                     mapId: intent.mapId,
-                    position: { x: intent.position.x, y: intent.position.z },
+                    position: this.#toRuntimePosition(intent.position),
                     source: 'ai',
                 };
             case 'move-to': {
@@ -132,4 +139,3 @@ export class SoloCommandAdapter {
         return { waited: false, command, result: this.#runtime.dispatch(command) };
     }
 }
-

@@ -7,6 +7,8 @@
 - Make every class wait through Solo startup, recovery, cooldown, root, and
   stun windows instead of issuing commands that the authoritative runtime must
   reject.
+- Add an explicit normalized-to-runtime position mapper for Solo map transfers,
+  so Tiled pixel coordinates are never assumed to equal Yuka steering units.
 
 ## 0.3.0
 

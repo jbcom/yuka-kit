@@ -26,6 +26,26 @@ describe('RPGJS Solo command boundary', () => {
         });
     });
 
+    it('converts normalized authoring coordinates for Solo map transfers', () => {
+        const adapter = new SoloCommandAdapter({
+            dispatch: () => ({ accepted: true, tick: 0 }),
+        }, {
+            toRuntimePosition: (position) => ({ x: position.x * 16, y: position.z * 16 }),
+        });
+
+        expect(adapter.commandFor('smith', { x: 0, y: 0, z: 0 }, {
+            kind: 'transfer-map',
+            mapId: 'town',
+            position: { x: 12, y: 0, z: 8 },
+        })).toEqual({
+            type: 'transfer-map',
+            entityId: 'smith',
+            mapId: 'town',
+            position: { x: 192, y: 128 },
+            source: 'ai',
+        });
+    });
+
     it('completes a governed route without teleport or direct state mutation', async () => {
         let x = 0;
         let lastCommand: SoloAICommand | undefined;

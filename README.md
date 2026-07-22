@@ -198,6 +198,15 @@ await runGovernedPlaythrough({
 });
 ```
 
+When observations use normalized tile or meter coordinates while Solo renders
+Tiled pixels, configure the transfer boundary explicitly:
+
+```ts
+const adapter = new SoloCommandAdapter(runtime, {
+  toRuntimePosition: ({ x, z }) => ({ x: x * 16, y: z * 16 }),
+});
+```
+
 The game's `observe()` adapter should populate `actor.readyActions` from the
 engine's side-effect-free combat availability queries and set
 `actor.movementAvailable` from its movement query. Governors then wait through
