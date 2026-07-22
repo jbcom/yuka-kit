@@ -170,6 +170,11 @@ Survival, safe interaction, combat, objective, exploration, and idle are
 competing `GoalEvaluator`s. The brain returns intent only; it cannot mutate a
 game world.
 
+Knight adapters bind both `knightBlock` and `knightUnblock`; the latter should
+map to the engine's public guard action with `{ active: false }`. Observing
+`actor.guarding` lets the governor release a successful block before resuming
+movement.
+
 ### RPGJS Solo (separate entry: `@arcade-cabinet/ai-yuka/solo`)
 
 `SoloCommandAdapter` maps the Yuka XZ plane to RPGJS Solo XY commands and

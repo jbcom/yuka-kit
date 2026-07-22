@@ -6,6 +6,7 @@ export type GovernorActionName =
     | 'heal'
     | 'knightStrike'
     | 'knightBlock'
+    | 'knightUnblock'
     | 'hunterShot'
     | 'hunterTrap'
     | 'mageBolt'
@@ -24,6 +25,7 @@ export interface GovernorActorObservation {
     readyActions?: ReadonlySet<GovernorActionName>;
     /** Exact movement legality reported by the authoritative runtime. Defaults to true. */
     movementAvailable?: boolean;
+    guarding?: boolean;
 }
 
 export interface GovernorEnemyObservation {
@@ -72,6 +74,7 @@ export interface GovernorActions extends Record<GovernorActionName, GovernorActi
     heal: GovernorAction;
     knightStrike: GovernorAction;
     knightBlock: GovernorAction;
+    knightUnblock: GovernorAction;
     hunterShot: GovernorAction;
     hunterTrap: GovernorAction;
     mageBolt: GovernorAction;

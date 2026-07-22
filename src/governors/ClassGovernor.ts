@@ -22,6 +22,7 @@ const DEFAULT_ACTIONS: GovernorActions = {
     heal: 'use-heal',
     knightStrike: 'knight:strike',
     knightBlock: 'knight:block',
+    knightUnblock: 'knight:unblock',
     hunterShot: 'hunter:shoot',
     hunterTrap: 'hunter:trap',
     mageBolt: 'mage:bolt',
@@ -207,6 +208,11 @@ export class ClassGovernor {
             case 'knight':
                 if (target.telegraphing && distance <= 2.5 && actionReady(state, 'knightBlock')) {
                     return actionIntent(this.#actions.knightBlock, targetPayload(target));
+                }
+                if (state.actor.guarding) {
+                    return actionReady(state, 'knightUnblock')
+                        ? actionIntent(this.#actions.knightUnblock)
+                        : { kind: 'wait' };
                 }
                 return distance > 1.6
                     ? movementAvailable(state)

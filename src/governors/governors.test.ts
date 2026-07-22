@@ -85,4 +85,25 @@ describe('ClassGovernor', () => {
             enemies: [{ id: 'slime', position: { x: 1, y: 0, z: 0 }, hp: 20, maxHp: 20 }],
         })).intent).toEqual({ kind: 'wait' });
     });
+
+    it('releases the knight guard through an explicit public action before moving', () => {
+        const knight = new ClassGovernor({
+            className: 'knight',
+            actions: {
+                knightUnblock: { action: 'combat:guard', payload: { active: false } },
+            },
+        });
+        const actor = {
+            ...state().actor,
+            guarding: true,
+            movementAvailable: false,
+            readyActions: new Set(['knightUnblock'] as const),
+        };
+
+        expect(knight.decide(state({ actor })).intent).toEqual({
+            kind: 'action',
+            action: 'combat:guard',
+            payload: { active: false },
+        });
+    });
 });

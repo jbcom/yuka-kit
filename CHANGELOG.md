@@ -13,6 +13,9 @@
   Yuka steering and GOAP, eliminating game-local manual FSM ticking.
 - Add a Solo AI vehicle bridge that derives Yuka state from authoritative Solo
   entities and returns steering through the public AI command boundary.
+- Give Knight governors an explicit guard-release action driven by observed
+  authoritative guard state, preventing a successful block from deadlocking
+  later movement.
 
 ## 0.3.0
 
