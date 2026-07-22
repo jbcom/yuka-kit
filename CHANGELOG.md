@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0
+
+- Export governor action names and binding types from the supported package
+  root so clean consumers do not reach into private declaration paths.
+
 ## 0.4.0
 
 - Add governor observations for exact semantic action readiness and combat-safe

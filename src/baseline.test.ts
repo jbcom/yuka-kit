@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { State, StateMachine, Vector3, Vehicle } from 'yuka';
 import * as api from './index.js';
+import type { GovernorActionName } from './index.js';
+
+const publicGovernorAction: GovernorActionName = 'knightUnblock';
 
 describe('published 0.1.0 source restoration', () => {
   it('preserves the public runtime API', () => {
+    expect(publicGovernorAction).toBe('knightUnblock');
     const required = [
       'AI_TYPE_PRESETS',
       'AttackState',
