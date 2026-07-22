@@ -80,3 +80,5 @@ export type {
 } from './governors/index.js';
 export { SeededRandom } from './random/index.js';
 export type { AgentIntent } from './intents.js';
+// command-neutral combat tactics
+export * from './combat/index.js';

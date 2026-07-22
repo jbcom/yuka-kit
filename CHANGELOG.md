@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0
+
+- Add Yuka-arbitrated `TacticalCombatAgent` intents for melee, ranged, charge, and ambush enemies.
+- Add `BossTacticalAgent` to turn the shared phase-aware `BossBrain` into actionable movement, attack, barrage, and summon intents.
+- Base tactical distances and authored behavior on the fleet-proven enemy loops from A Good Old-Fashioned Adventure while keeping combat effects game-owned.
+
 ## 0.7.0
 
 - Add versioned snapshots for accepted NPC routine activities and registered

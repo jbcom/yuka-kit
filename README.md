@@ -9,8 +9,9 @@ class-specific playthrough governors, and optional Koota/RPGJS Solo bridges.
 This Gitea repository is the source of truth for the private package. Version
 `0.1.0` restored the originally published artifact; `0.2.0` added the production
 systems needed by RPGJS Solo games, `0.3.0` added structured combat bindings,
-`0.4.0` added authoritative command-availability observations, and `0.7.0`
-adds versioned routine and combat-FSM state. All releases
+`0.4.0` added authoritative command-availability observations, `0.7.0`
+added versioned routine and combat-FSM state, and `0.8.0` adds actionable
+Yuka-arbitrated combat tactics. All releases
 target Node.js 24 LTS and pin the current underlying Yuka release.
 
 Extracted from **bok** (winner of the ai-yuka tournament — the deepest yuka
@@ -114,6 +115,33 @@ updates every managed combat FSM before steering; custom loops can call
 `createBrainForType(entity, aiType, bossPhases?)` builds the brain (boss +
 phases ⇒ full `BossBrain`). Games keep their own content-id → AIType lookup
 (like bok's `ENEMY_AI_TYPES`).
+
+### combat tactics
+
+`TacticalCombatAgent` turns melee, ranged, charge, and ambush observations
+into command-neutral `AgentIntent`s through Yuka `Think`/`GoalEvaluator`
+arbitration. Detection, attack bands, survival retreat, cooldown readiness,
+and each game's action payloads remain explicit inputs. The behavior model is
+extracted from A Good Old-Fashioned Adventure's authored enemy loop rather
+than duplicating that loop in every game.
+
+`BossTacticalAgent` composes the existing phase-aware `BossBrain` and converts
+its winning behavior into movement, melee, barrage, summon, or orbit intents.
+The game still owns damage, spawning, collision, and presentation.
+
+```ts
+const archer = new TacticalCombatAgent({
+  tactic: 'ranged', detectionRange: 12, attackRange: 10, preferredRange: 7,
+  attackIntent: ({ targetId }) => ({
+    kind: 'action', action: 'combat:use', payload: { actionId: 'arrow', targetId },
+  }),
+});
+
+const decision = archer.decide({
+  position: enemyPosition, target: heroPosition, targetId: 'hero',
+  healthPct: 0.8, attackReady: true,
+});
+```
 
 ### pathfinding
 
