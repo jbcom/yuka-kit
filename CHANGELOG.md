@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.0
+
+- Add versioned snapshots for accepted NPC routine activities and registered
+  Yuka FSM state so save/load resumes AI behavior instead of only positions.
+
 ## 0.6.0
 
 - Add an explicit Yuka-to-Solo movement-speed converter so normalized class

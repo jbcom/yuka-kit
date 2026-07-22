@@ -9,7 +9,8 @@ class-specific playthrough governors, and optional Koota/RPGJS Solo bridges.
 This Gitea repository is the source of truth for the private package. Version
 `0.1.0` restored the originally published artifact; `0.2.0` added the production
 systems needed by RPGJS Solo games, `0.3.0` added structured combat bindings,
-and `0.4.0` adds authoritative command-availability observations. All releases
+`0.4.0` added authoritative command-availability observations, and `0.7.0`
+adds versioned routine and combat-FSM state. All releases
 target Node.js 24 LTS and pin the current underlying Yuka release.
 
 Extracted from **bok** (winner of the ai-yuka tournament — the deepest yuka
@@ -69,6 +70,10 @@ combat states, parameterized (ranges, cooldowns, and transition state ids are
 constructor options; targets injected via `setTarget`). `createFsm(vehicle,
 states, initial)` wires a StateMachine; `getStateName(fsm)` resolves the
 current state's registration id.
+
+`snapshotFsmState()` / `restoreFsmState()` persist only that registered state
+id, keeping Yuka class instances out of save data while resuming patrol,
+chase, attack, or dead behavior through the existing machine.
 
 Time-based states read frame dt from the vehicle. `stepAI()` writes it and
 updates every managed combat FSM before steering; custom loops can call
@@ -143,6 +148,8 @@ constraints. This keeps map/navmesh ownership in the game.
 choose transfer, travel, activity, dwell, and return-home intents. Activity
 acknowledgement happens only after the command is accepted, preventing an NPC
 from silently skipping a failed interaction.
+`RoutineAgent.snapshot()` / `restore()` retain those accepted daily activity
+keys, so loading a save does not repeat already-completed work.
 
 ```ts
 const smith = new RoutineAgent({

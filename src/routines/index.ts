@@ -2,6 +2,7 @@ export { RoutineAgent, resolveRoutineTarget } from './RoutineAgent.js';
 export type {
     ResolvedRoutineTarget,
     RoutineAgentOptions,
+    RoutineAgentSnapshot,
     RoutineDecision,
     RoutineDestination,
     RoutineObservation,
