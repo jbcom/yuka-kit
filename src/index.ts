@@ -18,7 +18,13 @@ export { ALIGNMENT_WEIGHT, addBaseBehaviors, addFlockingBehaviors, type BaseBeha
 export { followWaypoints, type PathFollowHandle, type PathFollowOptions, } from './steering/pathFollow.js';
 export { arrive, evade, flee, pursuit, seek, wander } from './steering/presets.js';
 // fsm
-export { createFsm, getStateName } from './fsm/createFsm.js';
+export {
+    createFsm,
+    getStateName,
+    restoreFsmState,
+    snapshotFsmState,
+    type FsmStateSnapshot,
+} from './fsm/createFsm.js';
 export { getDt, setDt } from './fsm/dt.js';
 export { AttackState, type AttackStateOptions, ChaseState, type ChaseStateOptions, DeadState, FleeState, type FleeStateOptions, PatrolState, type PatrolStateOptions, } from './fsm/states/index.js';
 // goals
@@ -50,6 +56,7 @@ export { RoutineAgent, resolveRoutineTarget } from './routines/index.js';
 export type {
     ResolvedRoutineTarget,
     RoutineAgentOptions,
+    RoutineAgentSnapshot,
     RoutineDecision,
     RoutineDestination,
     RoutineObservation,

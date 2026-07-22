@@ -39,5 +39,22 @@ describe('RoutineAgent', () => {
         expect(agent.decide({ day: 1, minuteOfDay: 1_100, mapId: 'town', position: { x: 12, y: 0, z: 8 } }).intent)
             .toMatchObject({ kind: 'transfer-map', mapId: 'cottage' });
     });
-});
 
+    it('round-trips accepted daily activities without repeating work after load', () => {
+        const first = new RoutineAgent({ schedule });
+        const observation = {
+            day: 2,
+            minuteOfDay: 600,
+            mapId: 'town',
+            position: { x: 12, y: 0, z: 8 },
+        };
+        const activity = first.decide(observation);
+        first.acknowledge(activity, true);
+        const snapshot = first.snapshot();
+        expect(() => JSON.stringify(snapshot)).not.toThrow();
+
+        const restored = new RoutineAgent({ schedule });
+        restored.restore(snapshot);
+        expect(restored.decide(observation).intent).toMatchObject({ kind: 'wait' });
+    });
+});

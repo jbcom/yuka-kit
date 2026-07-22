@@ -43,6 +43,12 @@ export interface RoutineAgentOptions {
     arrivalRadius?: number;
 }
 
+export interface RoutineAgentSnapshot {
+    schema: 'arcade-ai-yuka-routine';
+    version: 1;
+    completedActivities: string[];
+}
+
 interface RoutineOwner extends YukaEntity {
     routine?: {
         observation: RoutineObservation;
@@ -197,5 +203,24 @@ export class RoutineAgent {
             if (key.startsWith(prefix)) this.#completedActivities.delete(key);
         }
     }
-}
 
+    snapshot(): RoutineAgentSnapshot {
+        return {
+            schema: 'arcade-ai-yuka-routine',
+            version: 1,
+            completedActivities: [...this.#completedActivities].sort(),
+        };
+    }
+
+    restore(snapshot: RoutineAgentSnapshot): void {
+        if (snapshot.schema !== 'arcade-ai-yuka-routine' || snapshot.version !== 1) {
+            throw new TypeError('Unsupported routine agent snapshot');
+        }
+        if (!Array.isArray(snapshot.completedActivities)
+            || snapshot.completedActivities.some((key) => typeof key !== 'string')) {
+            throw new TypeError('Routine snapshot activities must be strings');
+        }
+        this.#completedActivities.clear();
+        for (const key of snapshot.completedActivities) this.#completedActivities.add(key);
+    }
+}
