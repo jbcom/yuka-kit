@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0
+
+- Add an explicit Yuka-to-Solo movement-speed converter so normalized class
+  governor speeds do not leak into pixel-space runtimes.
+
 ## 0.5.0
 
 - Export governor action names and binding types from the supported package
