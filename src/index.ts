@@ -32,3 +32,41 @@ export { astar } from './pathfinding/GridAStar.js';
 export { applyPerception, createVisionSensor, inVisionCone, type RaycastFn, type VisionSensor, type VisionSensorOptions, } from './perception/vision.js';
 // presets
 export { AI_TYPE_PRESETS, createBrainForType } from './presets/aiTypes.js';
+// production orchestration
+export { EncounterDirector, generateFormation } from './encounters/index.js';
+export type {
+    EncounterDecision,
+    EncounterDirectorOptions,
+    EncounterDirectorSnapshot,
+    EncounterProbe,
+    EncounterSpawnPlan,
+    EncounterTableEntry,
+    FormationConstraints,
+    FormationPattern,
+    FormationResult,
+    FormationSpec,
+} from './encounters/index.js';
+export { RoutineAgent, resolveRoutineTarget } from './routines/index.js';
+export type {
+    ResolvedRoutineTarget,
+    RoutineAgentOptions,
+    RoutineDecision,
+    RoutineDestination,
+    RoutineObservation,
+    RoutineSchedule,
+    RoutineScheduleEntry,
+} from './routines/index.js';
+export { ClassGovernor, createClassGovernor } from './governors/index.js';
+export type {
+    ClassGovernorOptions,
+    GovernorActions,
+    GovernorActorObservation,
+    GovernorClass,
+    GovernorDecision,
+    GovernorEnemyObservation,
+    GovernorInteractable,
+    GovernorObjective,
+    GovernorObservation,
+} from './governors/index.js';
+export { SeededRandom } from './random/index.js';
+export type { AgentIntent } from './intents.js';

@@ -10,11 +10,17 @@ await Promise.all([
 ]);
 await copyFile(new URL('src/yuka.d.ts', root), new URL('yuka.d.ts', esm));
 
-const indexUrl = new URL('index.d.ts', esm);
-const index = await readFile(indexUrl, 'utf8');
-const reference = '/// <reference path="./yuka.d.ts" />\n';
-if (!index.startsWith(reference)) {
-  await writeFile(indexUrl, `${reference}${index}`);
-}
+const prependReference = async (path, referencePath) => {
+  const indexUrl = new URL(path, esm);
+  const index = await readFile(indexUrl, 'utf8');
+  const reference = `/// <reference path="${referencePath}" />\n`;
+  if (!index.startsWith(reference)) await writeFile(indexUrl, `${reference}${index}`);
+};
+
+await Promise.all([
+  prependReference('index.d.ts', './yuka.d.ts'),
+  prependReference('koota/index.d.ts', '../yuka.d.ts'),
+  prependReference('solo/index.d.ts', '../yuka.d.ts'),
+]);
 
 await writeFile(new URL('package.json', cjs), '{"type":"commonjs"}\n');

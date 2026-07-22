@@ -1,7 +1,7 @@
 {
   "name": "@arcade-cabinet/ai-yuka",
-  "version": "0.1.0",
-  "description": "Shared Yuka game-AI toolkit extracted from the strongest implementations in the arcade-cabinet fleet.",
+  "version": "0.2.0",
+  "description": "Shared Yuka AI toolkit with deterministic encounters, NPC routines, class governors, and RPGJS Solo command-driven playthroughs.",
   "type": "module",
   "license": "UNLICENSED",
   "private": false,
@@ -19,6 +19,7 @@
   },
   "files": [
     "dist",
+    "CHANGELOG.md",
     "README.md"
   ],
   "main": "./dist/cjs/index.js",
@@ -34,6 +35,11 @@
       "types": "./dist/esm/koota/index.d.ts",
       "import": "./dist/esm/koota/index.js",
       "require": "./dist/cjs/koota/index.js"
+    },
+    "./solo": {
+      "types": "./dist/esm/solo/index.d.ts",
+      "import": "./dist/esm/solo/index.js",
+      "require": "./dist/cjs/solo/index.js"
     },
     "./package.json": "./package.json"
   },

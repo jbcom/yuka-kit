@@ -25,4 +25,15 @@ await Promise.all([
     sourcemap: true,
     target: 'node24',
   }),
+  build({
+    absWorkingDir: root.pathname,
+    bundle: true,
+    entryPoints: ['src/solo/index.ts'],
+    external: ['yuka'],
+    format: 'cjs',
+    outfile: 'dist/cjs/solo/index.js',
+    platform: 'node',
+    sourcemap: true,
+    target: 'node24',
+  }),
 ]);
