@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- Add backward-compatible structured class-action bindings so Yuka governors
+  can dispatch `combat:use` with an exact Solo action ID and target payload.
+- Preserve the existing string action API while removing the need for
+  game-local combat alias handlers.
+
 ## 0.2.0
 
 - Add deterministic random encounter pressure, cooldown, repeat suppression,

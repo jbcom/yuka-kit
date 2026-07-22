@@ -48,15 +48,22 @@ export interface GovernorObservation {
     explorationTargets?: readonly Vec3Like[];
 }
 
+export interface GovernorActionBinding {
+    action: string;
+    payload?: Record<string, unknown>;
+}
+
+export type GovernorAction = string | GovernorActionBinding;
+
 export interface GovernorActions {
-    heal: string;
-    knightStrike: string;
-    knightBlock: string;
-    hunterShot: string;
-    hunterTrap: string;
-    mageBolt: string;
-    mageArea: string;
-    mageBlink: string;
+    heal: GovernorAction;
+    knightStrike: GovernorAction;
+    knightBlock: GovernorAction;
+    hunterShot: GovernorAction;
+    hunterTrap: GovernorAction;
+    mageBolt: GovernorAction;
+    mageArea: GovernorAction;
+    mageBlink: GovernorAction;
 }
 
 export interface ClassGovernorOptions {
@@ -71,4 +78,3 @@ export interface GovernorDecision {
     goal: 'combat' | 'explore' | 'idle' | 'interact' | 'objective' | 'survive';
     intent: AgentIntent;
 }
-

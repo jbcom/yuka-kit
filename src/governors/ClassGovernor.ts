@@ -3,6 +3,7 @@ import type { Vec3Like } from '../core/types.js';
 import type { AgentIntent } from '../intents.js';
 import type {
     ClassGovernorOptions,
+    GovernorAction,
     GovernorActions,
     GovernorClass,
     GovernorDecision,
@@ -76,6 +77,18 @@ class GovernorEvaluator extends GoalEvaluator {
 
 const targetPayload = (target: GovernorEnemyObservation): { targetId: string } => ({ targetId: target.id });
 
+const actionIntent = (
+    binding: GovernorAction,
+    payload?: Record<string, unknown>,
+): AgentIntent => {
+    if (typeof binding === 'string') return { kind: 'action', action: binding, payload };
+    return {
+        kind: 'action',
+        action: binding.action,
+        payload: { ...(binding.payload ?? {}), ...(payload ?? {}) },
+    };
+};
+
 /** Actual Yuka GoalEvaluator/Think brain for deterministic class playthroughs. */
 export class ClassGovernor {
     readonly brain: Think;
@@ -104,7 +117,7 @@ export class ClassGovernor {
             },
             (owner) => {
                 const state = observation(owner);
-                if (state.actor.healAvailable) return { kind: 'action', action: this.#actions.heal };
+                if (state.actor.healAvailable) return actionIntent(this.#actions.heal);
                 const enemy = nearestEnemy(state);
                 return enemy ? { kind: 'move-away', from: enemy.position } : { kind: 'stop' };
             },
@@ -180,30 +193,30 @@ export class ClassGovernor {
         switch (this.#className) {
             case 'knight':
                 if (target.telegraphing && distance <= 2.5) {
-                    return { kind: 'action', action: this.#actions.knightBlock, payload: targetPayload(target) };
+                    return actionIntent(this.#actions.knightBlock, targetPayload(target));
                 }
                 return distance > 1.6
                     ? { kind: 'move-to', target: target.position, speed: 1.05 }
-                    : { kind: 'action', action: this.#actions.knightStrike, payload: targetPayload(target) };
+                    : actionIntent(this.#actions.knightStrike, targetPayload(target));
 
             case 'hunter':
                 if ((target.clusterSize ?? state.enemies.length) >= 3 && state.actor.abilities?.has('trap')) {
-                    return { kind: 'action', action: this.#actions.hunterTrap, payload: targetPayload(target) };
+                    return actionIntent(this.#actions.hunterTrap, targetPayload(target));
                 }
                 if (distance < 4) return { kind: 'move-away', from: target.position, speed: 1.15 };
                 if (distance > 8 || target.lineOfSight === false) return { kind: 'move-to', target: target.position };
-                return { kind: 'action', action: this.#actions.hunterShot, payload: targetPayload(target) };
+                return actionIntent(this.#actions.hunterShot, targetPayload(target));
 
             case 'mage':
                 if (distance < 3 && state.actor.abilities?.has('blink')) {
-                    return { kind: 'action', action: this.#actions.mageBlink, payload: targetPayload(target) };
+                    return actionIntent(this.#actions.mageBlink, targetPayload(target));
                 }
                 if ((target.clusterSize ?? state.enemies.length) >= 3 && state.actor.resource >= 25) {
-                    return { kind: 'action', action: this.#actions.mageArea, payload: targetPayload(target) };
+                    return actionIntent(this.#actions.mageArea, targetPayload(target));
                 }
                 if (distance > 9 || target.lineOfSight === false) return { kind: 'move-to', target: target.position };
                 if (state.actor.resource >= 8) {
-                    return { kind: 'action', action: this.#actions.mageBolt, payload: targetPayload(target) };
+                    return actionIntent(this.#actions.mageBolt, targetPayload(target));
                 }
                 return { kind: 'move-away', from: target.position };
         }
@@ -211,4 +224,3 @@ export class ClassGovernor {
 }
 
 export const createClassGovernor = (options: ClassGovernorOptions): ClassGovernor => new ClassGovernor(options);
-
