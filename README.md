@@ -3,12 +3,13 @@
 Shared game-AI toolkit wrapping [yuka.js](https://mugen87.github.io/yuka/) for
 the arcade-cabinet fleet: steering helpers, combat FSM states, goal-driven
 `Think` brains with phase-aware boss AI, grid A\* pathfinding, physics-agnostic
-vision perception, and a koota ECS bridge.
+vision perception, deterministic encounter spawning, authored NPC routines,
+class-specific playthrough governors, and optional Koota/RPGJS Solo bridges.
 
 This Gitea repository is the source of truth for the private package. Version
-`0.1.0` is a source-restored representation of the already-published package;
-its behavior is held by API and package smoke tests before feature work lands.
-All releases target Node.js 24 LTS and pin the current underlying Yuka release.
+`0.1.0` restored the originally published artifact; `0.2.0` adds the production
+systems needed by RPGJS Solo games. All releases target Node.js 24 LTS and pin
+the current underlying Yuka release.
 
 Extracted from **bok** (winner of the ai-yuka tournament — the deepest yuka
 integration in the fleet and the only repo that had already solved yuka-objects-
@@ -27,7 +28,7 @@ pnpm add @arcade-cabinet/ai-yuka yuka
 pnpm add koota
 ```
 
-`yuka` (`^0.7.8`) is a peer dependency. `koota` is an **optional** peer — only
+`yuka` (`0.7.8`) is an exact peer dependency. `koota` is an **optional** peer — only
 needed for the `@arcade-cabinet/ai-yuka/koota` entry point.
 
 yuka ships no TypeScript types; this package bundles an ambient
@@ -121,6 +122,73 @@ cells start→end inclusive, `[]` when unreachable.
 - `applyPerception(seen, fsm, stateWhenSeen)` — the aethermoor raycast→FSM
   pattern: transition once on sighting.
 
+### encounters
+
+`EncounterDirector` consumes monotonic player movement steps rather than frame
+time. It combines safe-zone and content eligibility gates, cooldowns, pity
+pressure, recent-repeat suppression, a serializable seeded PRNG, and actual
+Yuka `Think`/`GoalEvaluator` weighted arbitration. A successful decision
+returns a spawn plan; the game remains responsible for creating its authored
+entities.
+
+`generateFormation()` turns that plan into ring, ambush, line, wedge, or
+scatter positions while enforcing injected walkability, visibility, and range
+constraints. This keeps map/navmesh ownership in the game.
+
+### routines
+
+`RoutineAgent` resolves daily schedule windows and uses a Yuka `Think` brain to
+choose transfer, travel, activity, dwell, and return-home intents. Activity
+acknowledgement happens only after the command is accepted, preventing an NPC
+from silently skipping a failed interaction.
+
+```ts
+const smith = new RoutineAgent({
+  schedule: {
+    home: { mapId: 'cottage', position: { x: 2, y: 0, z: 2 }, action: 'sleep' },
+    entries: [{
+      id: 'forge-shift', startMinute: 480, endMinute: 1020,
+      mapId: 'town', position: { x: 12, y: 0, z: 8 }, action: 'work-forge',
+    }],
+  },
+});
+```
+
+### class governors
+
+`ClassGovernor` is the reusable Yuka brain used by AI-governed playthroughs.
+Knight, hunter, and mage are distinct policies rather than reskins:
+
+- knight closes to melee range, reads telegraphs, and blocks before striking;
+- hunter maintains a ranged band, kites pressure, and traps groups;
+- mage blinks out of danger, spends resource on area control, and falls back
+  to ranged bolts or retreat.
+
+Survival, safe interaction, combat, objective, exploration, and idle are
+competing `GoalEvaluator`s. The brain returns intent only; it cannot mutate a
+game world.
+
+### RPGJS Solo (separate entry: `@arcade-cabinet/ai-yuka/solo`)
+
+`SoloCommandAdapter` maps the Yuka XZ plane to RPGJS Solo XY commands and
+forces `source: 'ai'`. `runGovernedPlaythrough()` repeatedly observes the real
+game, arbitrates through the selected class brain, dispatches through the same
+public command boundary as keyboard input, advances the normal game tick, and
+fails on rejected commands, stalls, or step limits. It never teleports or
+writes runtime state directly.
+
+```ts
+import { ClassGovernor } from '@arcade-cabinet/ai-yuka';
+import { SoloCommandAdapter, runGovernedPlaythrough } from '@arcade-cabinet/ai-yuka/solo';
+
+const governor = new ClassGovernor({ className: 'hunter' });
+const adapter = new SoloCommandAdapter(runtime);
+await runGovernedPlaythrough({
+  entityId: 'hero', governor, adapter,
+  observe, advance: () => runtime.stepTicks(1), isComplete,
+});
+```
+
 ### koota (separate entry: `@arcade-cabinet/ai-yuka/koota`)
 
 ```ts
@@ -143,7 +211,12 @@ name) have `rememberSighting`/`writeIntent` helpers on the bridge.
 ## Development
 
 ```sh
-pnpm --filter @arcade-cabinet/ai-yuka test       # vitest, node env
-pnpm --filter @arcade-cabinet/ai-yuka typecheck
-pnpm --filter @arcade-cabinet/ai-yuka build      # dist/esm + dist/cjs + type fixups
+pnpm test
+pnpm typecheck
+pnpm build
+pnpm verify       # all of the above plus ESM/CommonJS package smoke
 ```
+
+Before publishing, direct dependencies and peers must be checked against their
+current compatible releases. A private package is not feature-complete while
+its underlying stack is knowingly behind latest.
