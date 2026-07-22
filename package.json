@@ -1,0 +1,68 @@
+{
+  "name": "@arcade-cabinet/ai-yuka",
+  "version": "0.1.0",
+  "description": "Shared Yuka game-AI toolkit extracted from the strongest implementations in the arcade-cabinet fleet.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "ssh://gitea@redacted-private-registry.example/arcade-cabinet/ai-yuka.git"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.15.1",
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://redacted-private-registry.example/api/packages/arcade-cabinet/npm/"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./koota": {
+      "types": "./dist/esm/koota/index.d.ts",
+      "import": "./dist/esm/koota/index.js",
+      "require": "./dist/cjs/koota/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "build": "pnpm run clean && pnpm run build:esm && pnpm run build:cjs && node scripts/postbuild.mjs",
+    "build:esm": "tsc -p tsconfig.json",
+    "build:cjs": "node scripts/build-cjs.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "verify": "pnpm run typecheck && pnpm run test && pnpm run build && node scripts/smoke-package.mjs"
+  },
+  "peerDependencies": {
+    "koota": "0.6.6",
+    "yuka": "0.7.8"
+  },
+  "peerDependenciesMeta": {
+    "koota": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "esbuild": "0.28.1",
+    "koota": "0.6.6",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10",
+    "yuka": "0.7.8"
+  }
+}
