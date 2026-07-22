@@ -9,6 +9,8 @@
   reject.
 - Add an explicit normalized-to-runtime position mapper for Solo map transfers,
   so Tiled pixel coordinates are never assumed to equal Yuka steering units.
+- Make `stepAI()` advance managed combat FSMs with the real frame delta before
+  Yuka steering and GOAP, eliminating game-local manual FSM ticking.
 
 ## 0.3.0
 

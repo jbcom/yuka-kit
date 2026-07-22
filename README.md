@@ -59,7 +59,7 @@ const enemy = createCombatVehicle(
 
 const manager = createEntityManager(); // one per world — never a singleton
 manage(manager, enemy);
-stepAI(manager, dt, brainRegistry); // steering first, then goal arbitration
+stepAI(manager, dt, brainRegistry); // combat FSMs, steering/entities, then GOAP arbitration
 ```
 
 ### fsm
@@ -70,8 +70,9 @@ constructor options; targets injected via `setTarget`). `createFsm(vehicle,
 states, initial)` wires a StateMachine; `getStateName(fsm)` resolves the
 current state's registration id.
 
-Time-based states read frame dt from the vehicle: call `setDt(vehicle, dt)`
-each tick (the koota `AIBridge` exposes the same helper).
+Time-based states read frame dt from the vehicle. `stepAI()` writes it and
+updates every managed combat FSM before steering; custom loops can call
+`setDt(vehicle, dt)` directly (the Koota `AIBridge` exposes the same helper).
 
 ### steering
 
