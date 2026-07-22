@@ -1,5 +1,7 @@
 import { EntityManager, type GameEntity } from 'yuka';
+import { setDt } from '../fsm/dt.js';
 import type { BrainRegistry } from '../goals/BrainRegistry.js';
+import type { AIVehicle } from './types.js';
 /**
  * Thin wrapper around yuka.EntityManager — one manager per world/scene.
  * Kept as a factory (not a singleton) so multiple worlds/tests never share
@@ -22,6 +24,12 @@ export function stepAI(
     delta: number,
     brains?: BrainRegistry,
 ): void {
+    for (const entity of manager.entities ?? []) {
+        const vehicle = entity as Partial<AIVehicle>;
+        if (!vehicle.stateMachine) continue;
+        setDt(entity as AIVehicle, delta);
+        vehicle.stateMachine.update();
+    }
     manager.update(delta);
     brains?.updateAll();
 }

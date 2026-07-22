@@ -43,13 +43,13 @@ describe('published 0.1.0 source restoration', () => {
     expect(manager.entities).toContain(enemy);
     expect(api.getStateName(enemy.stateMachine)).toBe('patrol');
 
-    enemy.stateMachine.update();
+    api.stepAI(manager, 1 / 60);
     expect(api.getStateName(enemy.stateMachine)).toBe('chase');
   });
 
   it('ticks registered brains after entity updates', () => {
     const update = vi.fn();
-    const manager = { update };
+    const manager = { entities: [], update };
     const registry = new api.BrainRegistry();
     const execute = vi.fn();
     const terminate = vi.fn();

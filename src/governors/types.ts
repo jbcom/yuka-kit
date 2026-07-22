@@ -2,6 +2,16 @@ import type { Vec3Like } from '../core/types.js';
 import type { AgentIntent } from '../intents.js';
 
 export type GovernorClass = 'hunter' | 'knight' | 'mage';
+export type GovernorActionName =
+    | 'heal'
+    | 'knightStrike'
+    | 'knightBlock'
+    | 'knightUnblock'
+    | 'hunterShot'
+    | 'hunterTrap'
+    | 'mageBolt'
+    | 'mageArea'
+    | 'mageBlink';
 
 export interface GovernorActorObservation {
     position: Vec3Like;
@@ -11,6 +21,11 @@ export interface GovernorActorObservation {
     maxResource: number;
     healAvailable?: boolean;
     abilities?: ReadonlySet<string>;
+    /** Omit for backward-compatible always-ready behavior; an empty set means no class action is legal now. */
+    readyActions?: ReadonlySet<GovernorActionName>;
+    /** Exact movement legality reported by the authoritative runtime. Defaults to true. */
+    movementAvailable?: boolean;
+    guarding?: boolean;
 }
 
 export interface GovernorEnemyObservation {
@@ -55,10 +70,11 @@ export interface GovernorActionBinding {
 
 export type GovernorAction = string | GovernorActionBinding;
 
-export interface GovernorActions {
+export interface GovernorActions extends Record<GovernorActionName, GovernorAction> {
     heal: GovernorAction;
     knightStrike: GovernorAction;
     knightBlock: GovernorAction;
+    knightUnblock: GovernorAction;
     hunterShot: GovernorAction;
     hunterTrap: GovernorAction;
     mageBolt: GovernorAction;

@@ -7,9 +7,10 @@ vision perception, deterministic encounter spawning, authored NPC routines,
 class-specific playthrough governors, and optional Koota/RPGJS Solo bridges.
 
 This Gitea repository is the source of truth for the private package. Version
-`0.1.0` restored the originally published artifact; `0.2.0` adds the production
-systems needed by RPGJS Solo games. All releases target Node.js 24 LTS and pin
-the current underlying Yuka release.
+`0.1.0` restored the originally published artifact; `0.2.0` added the production
+systems needed by RPGJS Solo games, `0.3.0` added structured combat bindings,
+and `0.4.0` adds authoritative command-availability observations. All releases
+target Node.js 24 LTS and pin the current underlying Yuka release.
 
 Extracted from **bok** (winner of the ai-yuka tournament — the deepest yuka
 integration in the fleet and the only repo that had already solved yuka-objects-
@@ -58,7 +59,7 @@ const enemy = createCombatVehicle(
 
 const manager = createEntityManager(); // one per world — never a singleton
 manage(manager, enemy);
-stepAI(manager, dt, brainRegistry); // steering first, then goal arbitration
+stepAI(manager, dt, brainRegistry); // combat FSMs, steering/entities, then GOAP arbitration
 ```
 
 ### fsm
@@ -69,8 +70,9 @@ constructor options; targets injected via `setTarget`). `createFsm(vehicle,
 states, initial)` wires a StateMachine; `getStateName(fsm)` resolves the
 current state's registration id.
 
-Time-based states read frame dt from the vehicle: call `setDt(vehicle, dt)`
-each tick (the koota `AIBridge` exposes the same helper).
+Time-based states read frame dt from the vehicle. `stepAI()` writes it and
+updates every managed combat FSM before steering; custom loops can call
+`setDt(vehicle, dt)` directly (the Koota `AIBridge` exposes the same helper).
 
 ### steering
 
@@ -168,6 +170,11 @@ Survival, safe interaction, combat, objective, exploration, and idle are
 competing `GoalEvaluator`s. The brain returns intent only; it cannot mutate a
 game world.
 
+Knight adapters bind both `knightBlock` and `knightUnblock`; the latter should
+map to the engine's public guard action with `{ active: false }`. Observing
+`actor.guarding` lets the governor release a successful block before resuming
+movement.
+
 ### RPGJS Solo (separate entry: `@arcade-cabinet/ai-yuka/solo`)
 
 `SoloCommandAdapter` maps the Yuka XZ plane to RPGJS Solo XY commands and
@@ -195,6 +202,37 @@ await runGovernedPlaythrough({
   entityId: 'hero', governor, adapter,
   observe, advance: () => runtime.stepTicks(1), isComplete,
 });
+```
+
+When observations use normalized tile or meter coordinates while Solo renders
+Tiled pixels, configure the transfer boundary explicitly:
+
+```ts
+const adapter = new SoloCommandAdapter(runtime, {
+  toRuntimePosition: ({ x, z }) => ({ x: x * 16, y: z * 16 }),
+});
+```
+
+The game's `observe()` adapter should populate `actor.readyActions` from the
+engine's side-effect-free combat availability queries and set
+`actor.movementAvailable` from its movement query. Governors then wait through
+startup, recovery, cooldown, root, and stun windows rather than probing the
+runtime with commands expected to fail. Omitting either field preserves the
+original always-ready behavior for non-combat adapters.
+
+Enemy steering uses the same boundary. `SoloAIBridge` normalizes authoritative
+Solo pixel positions into Yuka units, then dispatches Yuka velocity as ordinary
+AI-source movement commands after `stepAI()` advances the shared FSM/GOAP loop:
+
+```ts
+const adapter = new SoloCommandAdapter(runtime, {
+  toRuntimePosition: ({ x, z }) => ({ x: x * 16, y: z * 16 }),
+});
+const bridge = new SoloAIBridge(adapter, { runtimeUnitsPerYukaUnit: 16 });
+
+bridge.syncFromSolo(enemyVehicle, runtime.getEntity('slime'));
+stepAI(entityManager, 1 / 60);
+bridge.dispatchToSolo(enemyVehicle, runtime.getEntity('slime'), combat.canMove('slime').available);
 ```
 
 ### koota (separate entry: `@arcade-cabinet/ai-yuka/koota`)

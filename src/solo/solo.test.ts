@@ -3,6 +3,8 @@ import { ClassGovernor } from '../governors/ClassGovernor.js';
 import type { GovernorObservation } from '../governors/types.js';
 import { SoloCommandAdapter, type SoloAICommand } from './adapter.js';
 import { runGovernedPlaythrough } from './playthrough.js';
+import { SoloAIBridge } from './vehicle.js';
+import { Vehicle } from 'yuka';
 
 describe('RPGJS Solo command boundary', () => {
     it('maps XZ-plane intents to AI-source Solo commands', () => {
@@ -24,6 +26,56 @@ describe('RPGJS Solo command boundary', () => {
             source: 'ai',
             vector: { x: 0.6, y: 0.8 },
         });
+    });
+
+    it('converts normalized authoring coordinates for Solo map transfers', () => {
+        const adapter = new SoloCommandAdapter({
+            dispatch: () => ({ accepted: true, tick: 0 }),
+        }, {
+            toRuntimePosition: (position) => ({ x: position.x * 16, y: position.z * 16 }),
+        });
+
+        expect(adapter.commandFor('smith', { x: 0, y: 0, z: 0 }, {
+            kind: 'transfer-map',
+            mapId: 'town',
+            position: { x: 12, y: 0, z: 8 },
+        })).toEqual({
+            type: 'transfer-map',
+            entityId: 'smith',
+            mapId: 'town',
+            position: { x: 192, y: 128 },
+            source: 'ai',
+        });
+    });
+
+    it('bridges Yuka steering through authoritative Solo commands', () => {
+        const commands: SoloAICommand[] = [];
+        const adapter = new SoloCommandAdapter({
+            dispatch(command) {
+                commands.push(command);
+                return { accepted: true, tick: commands.length };
+            },
+        });
+        const bridge = new SoloAIBridge(adapter, { runtimeUnitsPerYukaUnit: 16 });
+        const vehicle = new Vehicle();
+        const entity = {
+            id: 'slime',
+            position: { x: 160, y: 80 },
+            velocity: { x: 0, y: 0 },
+            moving: false,
+            stats: { hp: 20 },
+        };
+
+        bridge.syncFromSolo(vehicle, entity);
+        expect(vehicle.position).toMatchObject({ x: 10, y: 0, z: 5 });
+        vehicle.velocity.set(2, 0, 1);
+        expect(bridge.dispatchToSolo(vehicle, entity).command).toMatchObject({
+            type: 'move',
+            entityId: 'slime',
+            source: 'ai',
+            vector: { x: 2 / Math.sqrt(5), y: 1 / Math.sqrt(5) },
+        });
+        expect(bridge.dispatchToSolo(vehicle, entity, false)).toEqual({ waited: true });
     });
 
     it('completes a governed route without teleport or direct state mutation', async () => {

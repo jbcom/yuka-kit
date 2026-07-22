@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.4.0
+
+- Add governor observations for exact semantic action readiness and combat-safe
+  movement availability.
+- Make every class wait through Solo startup, recovery, cooldown, root, and
+  stun windows instead of issuing commands that the authoritative runtime must
+  reject.
+- Add an explicit normalized-to-runtime position mapper for Solo map transfers,
+  so Tiled pixel coordinates are never assumed to equal Yuka steering units.
+- Make `stepAI()` advance managed combat FSMs with the real frame delta before
+  Yuka steering and GOAP, eliminating game-local manual FSM ticking.
+- Add a Solo AI vehicle bridge that derives Yuka state from authoritative Solo
+  entities and returns steering through the public AI command boundary.
+- Give Knight governors an explicit guard-release action driven by observed
+  authoritative guard state, preventing a successful block from deadlocking
+  later movement.
+
 ## 0.3.0
 
 - Add backward-compatible structured class-action bindings so Yuka governors
