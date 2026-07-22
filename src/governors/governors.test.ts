@@ -52,5 +52,19 @@ describe('ClassGovernor', () => {
             actor: { ...state().actor, hp: 10, healAvailable: true },
         })).intent).toMatchObject({ kind: 'action', action: 'use-heal' });
     });
-});
 
+    it('binds class decisions directly to validated Solo action payloads', () => {
+        const hunter = new ClassGovernor({
+            className: 'hunter',
+            actions: {
+                hunterShot: { action: 'combat:use', payload: { actionId: 'hunter:shoot' } },
+            },
+        });
+
+        expect(hunter.decide(state()).intent).toEqual({
+            kind: 'action',
+            action: 'combat:use',
+            payload: { actionId: 'hunter:shoot', targetId: 'slime' },
+        });
+    });
+});

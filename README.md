@@ -181,7 +181,15 @@ writes runtime state directly.
 import { ClassGovernor } from '@arcade-cabinet/ai-yuka';
 import { SoloCommandAdapter, runGovernedPlaythrough } from '@arcade-cabinet/ai-yuka/solo';
 
-const governor = new ClassGovernor({ className: 'hunter' });
+const governor = new ClassGovernor({
+    className: 'hunter',
+    actions: {
+        hunterShot: {
+            action: 'combat:use',
+            payload: { actionId: 'hunter:shoot' },
+        },
+    },
+});
 const adapter = new SoloCommandAdapter(runtime);
 await runGovernedPlaythrough({
   entityId: 'hero', governor, adapter,
