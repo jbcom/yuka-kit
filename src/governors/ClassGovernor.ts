@@ -4,6 +4,7 @@ import type { AgentIntent } from '../intents.js';
 import type {
     ClassGovernorOptions,
     GovernorAction,
+    GovernorActionName,
     GovernorActions,
     GovernorClass,
     GovernorDecision,
@@ -76,6 +77,9 @@ class GovernorEvaluator extends GoalEvaluator {
 }
 
 const targetPayload = (target: GovernorEnemyObservation): { targetId: string } => ({ targetId: target.id });
+const actionReady = (state: GovernorObservation, name: GovernorActionName): boolean =>
+    state.actor.readyActions?.has(name) ?? true;
+const movementAvailable = (state: GovernorObservation): boolean => state.actor.movementAvailable ?? true;
 
 const actionIntent = (
     binding: GovernorAction,
@@ -111,15 +115,17 @@ export class ClassGovernor {
             (owner) => {
                 const state = observation(owner);
                 const ratio = state.actor.maxHp > 0 ? state.actor.hp / state.actor.maxHp : 0;
-                if (ratio <= this.#healThreshold && state.actor.healAvailable) return 1;
-                if (ratio <= this.#healThreshold * 0.65 && nearestEnemy(state)) return 0.98;
+                if (ratio <= this.#healThreshold && state.actor.healAvailable && actionReady(state, 'heal')) return 1;
+                if (ratio <= this.#healThreshold * 0.65 && nearestEnemy(state) && movementAvailable(state)) return 0.98;
                 return 0;
             },
             (owner) => {
                 const state = observation(owner);
-                if (state.actor.healAvailable) return actionIntent(this.#actions.heal);
+                if (state.actor.healAvailable && actionReady(state, 'heal')) return actionIntent(this.#actions.heal);
                 const enemy = nearestEnemy(state);
-                return enemy ? { kind: 'move-away', from: enemy.position } : { kind: 'stop' };
+                return enemy && movementAvailable(state)
+                    ? { kind: 'move-away', from: enemy.position }
+                    : { kind: 'wait' };
             },
         ));
 
@@ -153,7 +159,9 @@ export class ClassGovernor {
                 const objective = state.objective!;
                 const radius = objective.arrivalRadius ?? this.#interactionRadius;
                 if (planarDistance(state.actor.position, objective.position) > radius) {
-                    return { kind: 'move-to', target: objective.position };
+                    return movementAvailable(state)
+                        ? { kind: 'move-to', target: objective.position }
+                        : { kind: 'wait' };
                 }
                 return objective.action
                     ? { kind: 'action', action: objective.action, payload: objective.payload ?? { targetId: objective.id } }
@@ -164,7 +172,12 @@ export class ClassGovernor {
         this.brain.addEvaluator(new GovernorEvaluator(
             'explore',
             (owner) => observation(owner).explorationTargets?.length ? 0.35 : 0,
-            (owner) => ({ kind: 'move-to', target: observation(owner).explorationTargets![0] }),
+            (owner) => {
+                const state = observation(owner);
+                return movementAvailable(state)
+                    ? { kind: 'move-to', target: state.explorationTargets![0] }
+                    : { kind: 'wait' };
+            },
         ));
 
         this.brain.addEvaluator(new GovernorEvaluator(
@@ -192,33 +205,55 @@ export class ClassGovernor {
 
         switch (this.#className) {
             case 'knight':
-                if (target.telegraphing && distance <= 2.5) {
+                if (target.telegraphing && distance <= 2.5 && actionReady(state, 'knightBlock')) {
                     return actionIntent(this.#actions.knightBlock, targetPayload(target));
                 }
                 return distance > 1.6
-                    ? { kind: 'move-to', target: target.position, speed: 1.05 }
-                    : actionIntent(this.#actions.knightStrike, targetPayload(target));
+                    ? movementAvailable(state)
+                        ? { kind: 'move-to', target: target.position, speed: 1.05 }
+                        : { kind: 'wait' }
+                    : actionReady(state, 'knightStrike')
+                        ? actionIntent(this.#actions.knightStrike, targetPayload(target))
+                        : { kind: 'wait' };
 
             case 'hunter':
-                if ((target.clusterSize ?? state.enemies.length) >= 3 && state.actor.abilities?.has('trap')) {
+                if (
+                    (target.clusterSize ?? state.enemies.length) >= 3
+                    && state.actor.abilities?.has('trap')
+                    && actionReady(state, 'hunterTrap')
+                ) {
                     return actionIntent(this.#actions.hunterTrap, targetPayload(target));
                 }
-                if (distance < 4) return { kind: 'move-away', from: target.position, speed: 1.15 };
-                if (distance > 8 || target.lineOfSight === false) return { kind: 'move-to', target: target.position };
-                return actionIntent(this.#actions.hunterShot, targetPayload(target));
+                if (distance < 4) return movementAvailable(state)
+                    ? { kind: 'move-away', from: target.position, speed: 1.15 }
+                    : { kind: 'wait' };
+                if (distance > 8 || target.lineOfSight === false) return movementAvailable(state)
+                    ? { kind: 'move-to', target: target.position }
+                    : { kind: 'wait' };
+                return actionReady(state, 'hunterShot')
+                    ? actionIntent(this.#actions.hunterShot, targetPayload(target))
+                    : { kind: 'wait' };
 
             case 'mage':
-                if (distance < 3 && state.actor.abilities?.has('blink')) {
+                if (distance < 3 && state.actor.abilities?.has('blink') && actionReady(state, 'mageBlink')) {
                     return actionIntent(this.#actions.mageBlink, targetPayload(target));
                 }
-                if ((target.clusterSize ?? state.enemies.length) >= 3 && state.actor.resource >= 25) {
+                if (
+                    (target.clusterSize ?? state.enemies.length) >= 3
+                    && state.actor.resource >= 25
+                    && actionReady(state, 'mageArea')
+                ) {
                     return actionIntent(this.#actions.mageArea, targetPayload(target));
                 }
-                if (distance > 9 || target.lineOfSight === false) return { kind: 'move-to', target: target.position };
-                if (state.actor.resource >= 8) {
+                if (distance > 9 || target.lineOfSight === false) return movementAvailable(state)
+                    ? { kind: 'move-to', target: target.position }
+                    : { kind: 'wait' };
+                if (state.actor.resource >= 8 && actionReady(state, 'mageBolt')) {
                     return actionIntent(this.#actions.mageBolt, targetPayload(target));
                 }
-                return { kind: 'move-away', from: target.position };
+                return movementAvailable(state)
+                    ? { kind: 'move-away', from: target.position }
+                    : { kind: 'wait' };
         }
     }
 }

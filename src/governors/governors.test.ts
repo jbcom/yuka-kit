@@ -67,4 +67,22 @@ describe('ClassGovernor', () => {
             payload: { actionId: 'hunter:shoot', targetId: 'slime' },
         });
     });
+
+    it('waits through authoritative action and movement lock windows', () => {
+        const hunter = new ClassGovernor({ className: 'hunter' });
+        const mage = new ClassGovernor({ className: 'mage' });
+        const knight = new ClassGovernor({ className: 'knight' });
+        const lockedActor = {
+            ...state().actor,
+            readyActions: new Set<never>(),
+            movementAvailable: false,
+        };
+
+        expect(hunter.decide(state({ actor: lockedActor })).intent).toEqual({ kind: 'wait' });
+        expect(mage.decide(state({ actor: lockedActor })).intent).toEqual({ kind: 'wait' });
+        expect(knight.decide(state({
+            actor: lockedActor,
+            enemies: [{ id: 'slime', position: { x: 1, y: 0, z: 0 }, hp: 20, maxHp: 20 }],
+        })).intent).toEqual({ kind: 'wait' });
+    });
 });

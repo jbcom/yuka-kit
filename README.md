@@ -7,9 +7,10 @@ vision perception, deterministic encounter spawning, authored NPC routines,
 class-specific playthrough governors, and optional Koota/RPGJS Solo bridges.
 
 This Gitea repository is the source of truth for the private package. Version
-`0.1.0` restored the originally published artifact; `0.2.0` adds the production
-systems needed by RPGJS Solo games. All releases target Node.js 24 LTS and pin
-the current underlying Yuka release.
+`0.1.0` restored the originally published artifact; `0.2.0` added the production
+systems needed by RPGJS Solo games, `0.3.0` added structured combat bindings,
+and `0.4.0` adds authoritative command-availability observations. All releases
+target Node.js 24 LTS and pin the current underlying Yuka release.
 
 Extracted from **bok** (winner of the ai-yuka tournament — the deepest yuka
 integration in the fleet and the only repo that had already solved yuka-objects-
@@ -196,6 +197,13 @@ await runGovernedPlaythrough({
   observe, advance: () => runtime.stepTicks(1), isComplete,
 });
 ```
+
+The game's `observe()` adapter should populate `actor.readyActions` from the
+engine's side-effect-free combat availability queries and set
+`actor.movementAvailable` from its movement query. Governors then wait through
+startup, recovery, cooldown, root, and stun windows rather than probing the
+runtime with commands expected to fail. Omitting either field preserves the
+original always-ready behavior for non-combat adapters.
 
 ### koota (separate entry: `@arcade-cabinet/ai-yuka/koota`)
 

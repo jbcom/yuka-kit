@@ -3,6 +3,7 @@ export type {
     ClassGovernorOptions,
     GovernorAction,
     GovernorActionBinding,
+    GovernorActionName,
     GovernorActions,
     GovernorActorObservation,
     GovernorClass,

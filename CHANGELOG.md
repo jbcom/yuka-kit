@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0
+
+- Add governor observations for exact semantic action readiness and combat-safe
+  movement availability.
+- Make every class wait through Solo startup, recovery, cooldown, root, and
+  stun windows instead of issuing commands that the authoritative runtime must
+  reject.
+
 ## 0.3.0
 
 - Add backward-compatible structured class-action bindings so Yuka governors
