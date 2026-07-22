@@ -11,6 +11,8 @@
   so Tiled pixel coordinates are never assumed to equal Yuka steering units.
 - Make `stepAI()` advance managed combat FSMs with the real frame delta before
   Yuka steering and GOAP, eliminating game-local manual FSM ticking.
+- Add a Solo AI vehicle bridge that derives Yuka state from authoritative Solo
+  entities and returns steering through the public AI command boundary.
 
 ## 0.3.0
 

@@ -215,6 +215,21 @@ startup, recovery, cooldown, root, and stun windows rather than probing the
 runtime with commands expected to fail. Omitting either field preserves the
 original always-ready behavior for non-combat adapters.
 
+Enemy steering uses the same boundary. `SoloAIBridge` normalizes authoritative
+Solo pixel positions into Yuka units, then dispatches Yuka velocity as ordinary
+AI-source movement commands after `stepAI()` advances the shared FSM/GOAP loop:
+
+```ts
+const adapter = new SoloCommandAdapter(runtime, {
+  toRuntimePosition: ({ x, z }) => ({ x: x * 16, y: z * 16 }),
+});
+const bridge = new SoloAIBridge(adapter, { runtimeUnitsPerYukaUnit: 16 });
+
+bridge.syncFromSolo(enemyVehicle, runtime.getEntity('slime'));
+stepAI(entityManager, 1 / 60);
+bridge.dispatchToSolo(enemyVehicle, runtime.getEntity('slime'), combat.canMove('slime').available);
+```
+
 ### koota (separate entry: `@arcade-cabinet/ai-yuka/koota`)
 
 ```ts
