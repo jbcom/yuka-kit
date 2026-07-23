@@ -63,6 +63,12 @@ export interface GovernorInteractable {
 export interface GovernorObservation {
     actor: GovernorActorObservation;
     enemies: readonly GovernorEnemyObservation[];
+    /**
+     * A path-aware sanctuary, healer, cache, or other authored recovery step.
+     * Games may update the position to the next navigation waypoint and expose
+     * the final interaction only when the actor reaches the usable radius.
+     */
+    recovery?: GovernorObjective;
     objective?: GovernorObjective;
     interactable?: GovernorInteractable;
     explorationTargets?: readonly Vec3Like[];
