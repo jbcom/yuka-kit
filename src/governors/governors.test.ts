@@ -209,4 +209,29 @@ describe('ClassGovernor', () => {
             }],
         })).intent).toEqual({ kind: 'wait', reason: 'hold-guard-through-telegraph' });
     });
+
+    it('wards against any nearby telegraph in a pack, not only the nearest enemy', () => {
+        const mage = new ClassGovernor({ className: 'mage' });
+
+        expect(mage.decide(state({
+            enemies: [
+                {
+                    id: 'nearest-rootling',
+                    position: { x: 2, y: 0, z: 0 },
+                    hp: 60,
+                    maxHp: 60,
+                },
+                {
+                    id: 'telegraphing-shade-bloom',
+                    position: { x: 4, y: 0, z: 0 },
+                    hp: 60,
+                    maxHp: 60,
+                    telegraphing: true,
+                },
+            ],
+        }))).toMatchObject({
+            goal: 'combat',
+            intent: { kind: 'action', action: 'mage:ward' },
+        });
+    });
 });

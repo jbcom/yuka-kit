@@ -16,6 +16,64 @@ export interface VisionSensor {
     sees(origin: Vec3Like, forward: Vec3Like): boolean;
 }
 
+export interface Point2Like {
+    x: number;
+    y: number;
+}
+
+export interface Aabb2Like extends Point2Like {
+    width: number;
+    height: number;
+}
+
+/**
+ * Tests an open line segment against a center-positioned 2D AABB. Endpoint
+ * intersections are ignored so actors standing against a wall can still see
+ * out of their own cell.
+ */
+export function segmentIntersectsAabb2D(
+    from: Point2Like,
+    to: Point2Like,
+    obstacle: Aabb2Like,
+    padding = 0,
+): boolean {
+    const minX = obstacle.x - obstacle.width / 2 - padding;
+    const maxX = obstacle.x + obstacle.width / 2 + padding;
+    const minY = obstacle.y - obstacle.height / 2 - padding;
+    const maxY = obstacle.y + obstacle.height / 2 + padding;
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    let near = 0;
+    let far = 1;
+    for (const [origin, delta, min, max] of [
+        [from.x, dx, minX, maxX],
+        [from.y, dy, minY, maxY],
+    ] as const) {
+        if (Math.abs(delta) < Number.EPSILON) {
+            if (origin < min || origin > max)
+                return false;
+            continue;
+        }
+        const first = (min - origin) / delta;
+        const second = (max - origin) / delta;
+        near = Math.max(near, Math.min(first, second));
+        far = Math.min(far, Math.max(first, second));
+        if (near > far)
+            return false;
+    }
+    return near > 0.01 && near < 0.99;
+}
+
+/** True when no supplied 2D obstacle blocks the open segment. */
+export function hasAabbLineOfSight2D(
+    from: Point2Like,
+    to: Point2Like,
+    obstacles: readonly Aabb2Like[],
+    padding = 0,
+): boolean {
+    return !obstacles.some((obstacle) => segmentIntersectsAabb2D(from, to, obstacle, padding));
+}
+
 /** Build a line-of-sight sensor over a physics raycast adapter. */
 export function createVisionSensor<Hit>(
     raycast: RaycastFn<Hit>,

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.0
+
+- Let Mage governors ward against any nearby startup telegraph in a pack,
+  instead of ignoring an imminent attack whenever a different enemy happens
+  to be the nearest target.
+- Add reusable 2D AABB line-of-sight helpers extracted from the fleet-proven
+  Quest enemy governor, so ranged agents can reposition around authoritative
+  Solo collision instead of firing through walls.
+
 ## 0.13.0
 
 - Keep the Knight's authoritative guard raised for the full nearby enemy

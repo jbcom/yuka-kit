@@ -35,7 +35,7 @@ export { AggressionEvaluator, BossPhaseEvaluator, ChaseEvaluator, FleeEvaluator,
 // pathfinding
 export { astar } from './pathfinding/GridAStar.js';
 // perception
-export { applyPerception, createVisionSensor, inVisionCone, type RaycastFn, type VisionSensor, type VisionSensorOptions, } from './perception/vision.js';
+export { type Aabb2Like, applyPerception, createVisionSensor, hasAabbLineOfSight2D, inVisionCone, type Point2Like, type RaycastFn, segmentIntersectsAabb2D, type VisionSensor, type VisionSensorOptions, } from './perception/vision.js';
 // presets
 export { AI_TYPE_PRESETS, createBrainForType } from './presets/aiTypes.js';
 // production orchestration
