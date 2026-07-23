@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.0
+
+- Add strict, radius-aware AABB projectile clearance for ranged governors,
+  including muzzle offsets and the target's collision radius. This keeps the
+  existing endpoint-tolerant visual sight contract while preventing agents
+  from repeatedly spawning shots inside nearby walls.
+- Trust the game runtime's semantic action-readiness observation for Mage basic
+  attacks instead of duplicating an obsolete hard-coded resource cost.
+
 ## 0.14.0
 
 - Let Mage governors ward against any nearby startup telegraph in a pack,

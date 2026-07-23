@@ -157,6 +157,9 @@ cells start→end inclusive, `[]` when unreachable.
 - `inVisionCone(origin, forward, target, range, halfAngleRad)` — pure-math cone test.
 - `hasAabbLineOfSight2D(from, to, obstacles, padding?)` — physics-neutral
   collision visibility for center-positioned rectangular obstacles.
+- `hasAabbProjectileClearance2D(from, to, obstacles, options)` — strict
+  radius-aware muzzle-to-impact clearance for ranged AI; unlike visibility,
+  a projectile spawned inside a padded obstacle is blocked.
 - `applyPerception(seen, fsm, stateWhenSeen)` — the aethermoor raycast→FSM
   pattern: transition once on sighting.
 

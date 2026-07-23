@@ -367,7 +367,7 @@ export class ClassGovernor {
                 if (distance > 9 || target.lineOfSight === false) return movementAvailable(state)
                     ? { kind: 'move-to', target: target.position }
                     : { kind: 'wait' };
-                if (state.actor.resource >= 8 && actionReady(state, 'mageBolt')) {
+                if (actionReady(state, 'mageBolt')) {
                     return actionIntent(this.#actions.mageBolt, targetPayload(target));
                 }
                 return movementAvailable(state)
