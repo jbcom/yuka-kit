@@ -183,6 +183,72 @@ describe('ClassGovernor', () => {
         });
     });
 
+    it('approaches occluded Hunter targets before attempting close-range kiting', () => {
+        const hunter = new ClassGovernor({ className: 'hunter' });
+        const actor = {
+            ...state().actor,
+            readyActions: new Set(['hunterRoll', 'hunterShot'] as const),
+            movementAvailable: true,
+        };
+        const target = {
+            id: 'rootling-behind-corner',
+            position: { x: 2, y: 0, z: 0 },
+            hp: 60,
+            maxHp: 60,
+            lineOfSight: false,
+        };
+
+        expect(hunter.decide(state({ actor, enemies: [target] }))).toMatchObject({
+            goal: 'combat',
+            intent: { kind: 'move-to', target: target.position },
+        });
+    });
+
+    it('fires a ready Hunter shot while kiting at close range', () => {
+        const hunter = new ClassGovernor({ className: 'hunter' });
+        const actor = {
+            ...state().actor,
+            readyActions: new Set(['hunterShot'] as const),
+            movementAvailable: true,
+        };
+        const target = {
+            id: 'close-rootling',
+            position: { x: 3.5, y: 0, z: 0 },
+            hp: 60,
+            maxHp: 60,
+            lineOfSight: true,
+        };
+
+        expect(hunter.decide(state({ actor, enemies: [target] }))).toMatchObject({
+            goal: 'combat',
+            intent: { kind: 'action', action: 'hunter:shoot', payload: { targetId: target.id } },
+        });
+    });
+
+    it('rolls through a ranged telegraph before it lands', () => {
+        const hunter = new ClassGovernor({ className: 'hunter' });
+        const actor = {
+            ...state().actor,
+            readyActions: new Set(['hunterRoll', 'hunterShot'] as const),
+            movementAvailable: true,
+        };
+
+        expect(hunter.decide(state({
+            actor,
+            enemies: [{
+                id: 'shade-bloom',
+                position: { x: 7, y: 0, z: 0 },
+                hp: 72,
+                maxHp: 72,
+                lineOfSight: true,
+                telegraphing: true,
+            }],
+        }))).toMatchObject({
+            goal: 'combat',
+            intent: { kind: 'action', action: 'hunter:roll' },
+        });
+    });
+
     it('releases the knight guard through an explicit public action before moving', () => {
         const knight = new ClassGovernor({
             className: 'knight',
