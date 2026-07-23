@@ -19,6 +19,8 @@ export interface EncounterProbe {
     /** 0 disables encounters; 1 is normal danger; values above 1 raise pressure. */
     danger?: number;
     safe?: boolean;
+    /** Suppresses a new roll while a previously spawned encounter is unresolved. */
+    encounterActive?: boolean;
     tags?: ReadonlySet<string>;
 }
 
@@ -47,7 +49,7 @@ export interface EncounterSpawnPlan<Payload = unknown> {
 }
 
 export type EncounterDecision<Payload = unknown> =
-    | { spawned: false; reason: 'cooldown' | 'duplicate-step' | 'no-eligible-entry' | 'roll' | 'safe' }
+    | { spawned: false; reason: 'active-encounter' | 'cooldown' | 'duplicate-step' | 'no-eligible-entry' | 'roll' | 'safe' }
     | { spawned: true; plan: EncounterSpawnPlan<Payload> };
 
 export interface EncounterDirectorOptions {

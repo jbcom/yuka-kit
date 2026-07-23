@@ -41,6 +41,16 @@ describe('EncounterDirector', () => {
         expect(director.consider(probe(2), gated).spawned).toBe(true);
         expect(director.consider(probe(3), gated)).toEqual({ spawned: false, reason: 'no-eligible-entry' });
     });
+
+    it('does not stack a new formation while an encounter is unresolved', () => {
+        const director = new EncounterDirector({ seed: 11, baseChance: 1, minStepsBetweenEncounters: 0 });
+
+        expect(director.consider({ ...probe(1), encounterActive: true }, table)).toEqual({
+            spawned: false,
+            reason: 'active-encounter',
+        });
+        expect(director.consider(probe(2), table).spawned).toBe(true);
+    });
 });
 
 describe('generateFormation', () => {
@@ -62,4 +72,3 @@ describe('generateFormation', () => {
         expect(result.positions.every((point) => point.x <= 0)).toBe(true);
     });
 });
-

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.0
+
+- Let encounter integrations suppress new Yuka-directed formation rolls while
+  a previously spawned encounter is still active.
+
 ## 0.8.0
 
 - Add Yuka-arbitrated `TacticalCombatAgent` intents for melee, ranged, charge, and ambush enemies.
