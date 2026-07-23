@@ -61,6 +61,51 @@ describe('ClassGovernor', () => {
         })).intent).toMatchObject({ kind: 'action', action: 'use-heal' });
     });
 
+    it('follows authored recovery waypoints and interacts on arrival', () => {
+        const knight = new ClassGovernor({ className: 'knight', healThreshold: 0.4 });
+        const recoveringActor = { ...state().actor, hp: 35 };
+        const recovery = {
+            id: 'road-cache',
+            position: { x: 3, y: 0, z: 2 },
+            arrivalRadius: 0.25,
+        };
+
+        expect(knight.decide(state({ actor: recoveringActor, recovery }))).toMatchObject({
+            goal: 'survive',
+            intent: { kind: 'move-to', target: recovery.position },
+        });
+        expect(knight.decide(state({
+            actor: { ...recoveringActor, position: recovery.position },
+            recovery: { ...recovery, action: 'interact' },
+        }))).toMatchObject({
+            goal: 'survive',
+            intent: { kind: 'action', action: 'interact', payload: { targetId: 'road-cache' } },
+        });
+    });
+
+    it('uses class defense before continuing a pressured recovery route', () => {
+        const knight = new ClassGovernor({ className: 'knight', healThreshold: 0.4 });
+        const decision = knight.decide(state({
+            actor: { ...state().actor, hp: 30 },
+            enemies: [{
+                id: 'reed-lurker',
+                position: { x: 2, y: 0, z: 0 },
+                hp: 80,
+                maxHp: 80,
+                telegraphing: true,
+            }],
+            recovery: {
+                id: 'islet-cache',
+                position: { x: 6, y: 0, z: 4 },
+            },
+        }));
+
+        expect(decision).toMatchObject({
+            goal: 'survive',
+            intent: { kind: 'action', action: 'knight:block' },
+        });
+    });
+
     it('governs every distinct class ability exposed by a game', () => {
         const knight = new ClassGovernor({ className: 'knight' });
         expect(knight.decide(state({

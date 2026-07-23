@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.0
+
+- Add path-aware recovery objectives to class-governor observations so
+  low-health agents can reach authored healers, caches, or sanctuaries instead
+  of repeatedly fleeing into a clamped map edge.
+- Preserve class identity under recovery pressure by using an advertised
+  Knight block, Hunter roll, or Mage ward against immediate telegraphs before
+  continuing the recovery route.
+
 ## 0.11.0
 
 - Extend reusable class governors to use the full opt-in combat kit exposed by

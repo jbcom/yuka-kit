@@ -123,18 +123,12 @@ export class ClassGovernor {
             (owner) => {
                 const state = observation(owner);
                 const ratio = state.actor.maxHp > 0 ? state.actor.hp / state.actor.maxHp : 0;
+                if (ratio <= this.#healThreshold && state.recovery) return 1;
                 if (ratio <= this.#healThreshold && state.actor.healAvailable && actionReady(state, 'heal')) return 1;
                 if (ratio <= this.#healThreshold * 0.65 && nearestEnemy(state) && movementAvailable(state)) return 0.98;
                 return 0;
             },
-            (owner) => {
-                const state = observation(owner);
-                if (state.actor.healAvailable && actionReady(state, 'heal')) return actionIntent(this.#actions.heal);
-                const enemy = nearestEnemy(state);
-                return enemy && movementAvailable(state)
-                    ? { kind: 'move-away', from: enemy.position }
-                    : { kind: 'wait' };
-            },
+            (owner) => this.#survivalIntent(observation(owner)),
         ));
 
         this.brain.addEvaluator(new GovernorEvaluator(
@@ -204,6 +198,61 @@ export class ClassGovernor {
         this.brain.arbitrate();
         if (!this.#owner.decision) throw new Error('Yuka governor arbitration produced no decision');
         return this.#owner.decision;
+    }
+
+    #survivalIntent(state: GovernorObservation): AgentIntent {
+        if (state.actor.healAvailable && actionReady(state, 'heal')) {
+            return actionIntent(this.#actions.heal);
+        }
+
+        const enemy = nearestEnemy(state);
+        const enemyDistance = enemy
+            ? planarDistance(state.actor.position, enemy.position)
+            : Number.POSITIVE_INFINITY;
+
+        if (this.#className === 'knight' && state.actor.guarding) {
+            return actionReady(state, 'knightUnblock')
+                ? actionIntent(this.#actions.knightUnblock)
+                : { kind: 'wait' };
+        }
+        if (enemy?.telegraphing) {
+            if (this.#className === 'knight' && enemyDistance <= 2.5 && actionReady(state, 'knightBlock')) {
+                return actionIntent(this.#actions.knightBlock, targetPayload(enemy));
+            }
+            if (
+                this.#className === 'hunter'
+                && enemyDistance <= 3
+                && hasAbility(state, 'hunter-roll')
+                && actionReady(state, 'hunterRoll')
+            ) {
+                return actionIntent(this.#actions.hunterRoll);
+            }
+            if (
+                this.#className === 'mage'
+                && enemyDistance <= 5
+                && hasAbility(state, 'mage-ward')
+                && actionReady(state, 'mageWard')
+            ) {
+                return actionIntent(this.#actions.mageWard);
+            }
+        }
+
+        const recovery = state.recovery;
+        if (recovery) {
+            const radius = recovery.arrivalRadius ?? this.#interactionRadius;
+            if (planarDistance(state.actor.position, recovery.position) > radius) {
+                return movementAvailable(state)
+                    ? { kind: 'move-to', target: recovery.position }
+                    : { kind: 'wait' };
+            }
+            return recovery.action
+                ? { kind: 'action', action: recovery.action, payload: recovery.payload ?? { targetId: recovery.id } }
+                : { kind: 'stop' };
+        }
+
+        return enemy && movementAvailable(state)
+            ? { kind: 'move-away', from: enemy.position }
+            : { kind: 'wait' };
     }
 
     #combatIntent(state: GovernorObservation): AgentIntent {

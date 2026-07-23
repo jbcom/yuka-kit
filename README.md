@@ -207,6 +207,13 @@ Survival, safe interaction, combat, objective, exploration, and idle are
 competing `GoalEvaluator`s. The brain returns intent only; it cannot mutate a
 game world.
 
+Low-health observations may include a path-aware `recovery` objective. The
+governor prioritizes its next waypoint over blind edge-clamped fleeing, uses
+the class's advertised defense against an immediate telegraph, and dispatches
+the authored healer/cache interaction only after reaching its usable radius.
+The game remains responsible for pathfinding, healing effects, and deciding
+which recovery sources are currently valid.
+
 Knight adapters bind both `knightBlock` and `knightUnblock`; the latter should
 map to the engine's public guard action with `{ active: false }`. Observing
 `actor.guarding` lets the governor release a successful block before resuming
