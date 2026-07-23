@@ -30,6 +30,8 @@ export interface EncounterTableEntry<Payload = unknown> {
     payload?: Payload;
     formation?: FormationSpec;
     cooldownSteps?: number;
+    /** Maximum resolved rolls for this entry on one map. Omit for no budget. */
+    maxSpawnsPerMap?: number;
     minLevel?: number;
     maxLevel?: number;
     maps?: readonly string[];
@@ -75,6 +77,8 @@ export interface EncounterDirectorSnapshot {
     misses: number;
     history: string[];
     lastSpawnSteps: Array<[string, number]>;
+    /** Added in 0.10; optional so 0.9 and earlier saves remain restorable. */
+    spawnCounts?: Array<[mapId: string, encounterId: string, count: number]>;
 }
 
 export interface FormationConstraints {

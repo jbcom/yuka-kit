@@ -42,6 +42,7 @@ export class EncounterDirector<Payload = unknown> {
     readonly #historySize: number;
     readonly #repeatPenalty: number;
     readonly #lastSpawnSteps = new Map<string, number>();
+    readonly #spawnCounts = new Map<string, Map<string, number>>();
     #lastProbeStep = -1;
     #lastEncounterStep = Number.NEGATIVE_INFINITY;
     #misses = 0;
@@ -87,6 +88,9 @@ export class EncounterDirector<Payload = unknown> {
         this.#misses = 0;
         this.#lastEncounterStep = probe.step;
         this.#lastSpawnSteps.set(selected.id, probe.step);
+        const mapCounts = this.#spawnCounts.get(probe.mapId) ?? new Map<string, number>();
+        mapCounts.set(selected.id, (mapCounts.get(selected.id) ?? 0) + 1);
+        this.#spawnCounts.set(probe.mapId, mapCounts);
         this.#history.unshift(selected.id);
         this.#history.length = Math.min(this.#history.length, this.#historySize);
 
@@ -112,6 +116,9 @@ export class EncounterDirector<Payload = unknown> {
             misses: this.#misses,
             history: [...this.#history],
             lastSpawnSteps: [...this.#lastSpawnSteps.entries()],
+            spawnCounts: [...this.#spawnCounts.entries()].flatMap(([mapId, counts]) =>
+                [...counts.entries()].map(([encounterId, count]) => [mapId, encounterId, count]),
+            ),
         };
     }
 
@@ -126,6 +133,15 @@ export class EncounterDirector<Payload = unknown> {
         this.#history = snapshot.history.slice(0, this.#historySize);
         this.#lastSpawnSteps.clear();
         for (const [id, step] of snapshot.lastSpawnSteps) this.#lastSpawnSteps.set(id, step);
+        this.#spawnCounts.clear();
+        for (const [mapId, encounterId, count] of snapshot.spawnCounts ?? []) {
+            if (!Number.isInteger(count) || count < 0) {
+                throw new TypeError('Encounter spawn counts must be non-negative integers');
+            }
+            const mapCounts = this.#spawnCounts.get(mapId) ?? new Map<string, number>();
+            mapCounts.set(encounterId, count);
+            this.#spawnCounts.set(mapId, mapCounts);
+        }
     }
 
     #arbitrate(entries: readonly EncounterTableEntry<Payload>[]): EncounterTableEntry<Payload> | undefined {
@@ -149,6 +165,11 @@ export class EncounterDirector<Payload = unknown> {
         if (entry.minLevel !== undefined && probe.level < entry.minLevel) return false;
         if (entry.maxLevel !== undefined && probe.level > entry.maxLevel) return false;
         if (entry.maps && !entry.maps.includes(probe.mapId)) return false;
+        if (
+            entry.maxSpawnsPerMap !== undefined &&
+            (this.#spawnCounts.get(probe.mapId)?.get(entry.id) ?? 0) >=
+                Math.max(0, Math.floor(entry.maxSpawnsPerMap))
+        ) return false;
         if (entry.requiredTags?.some((tag) => !probe.tags?.has(tag))) return false;
         if (entry.forbiddenTags?.some((tag) => probe.tags?.has(tag))) return false;
         const lastSpawn = this.#lastSpawnSteps.get(entry.id);
