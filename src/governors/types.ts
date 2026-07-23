@@ -7,11 +7,16 @@ export type GovernorActionName =
     | 'knightStrike'
     | 'knightBlock'
     | 'knightUnblock'
+    | 'knightRush'
+    | 'knightArea'
     | 'hunterShot'
     | 'hunterTrap'
+    | 'hunterRoll'
+    | 'hunterRite'
     | 'mageBolt'
     | 'mageArea'
-    | 'mageBlink';
+    | 'mageBlink'
+    | 'mageWard';
 
 export interface GovernorActorObservation {
     position: Vec3Like;
@@ -75,11 +80,16 @@ export interface GovernorActions extends Record<GovernorActionName, GovernorActi
     knightStrike: GovernorAction;
     knightBlock: GovernorAction;
     knightUnblock: GovernorAction;
+    knightRush: GovernorAction;
+    knightArea: GovernorAction;
     hunterShot: GovernorAction;
     hunterTrap: GovernorAction;
+    hunterRoll: GovernorAction;
+    hunterRite: GovernorAction;
     mageBolt: GovernorAction;
     mageArea: GovernorAction;
     mageBlink: GovernorAction;
+    mageWard: GovernorAction;
 }
 
 export interface ClassGovernorOptions {

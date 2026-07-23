@@ -23,11 +23,16 @@ const DEFAULT_ACTIONS: GovernorActions = {
     knightStrike: 'knight:strike',
     knightBlock: 'knight:block',
     knightUnblock: 'knight:unblock',
+    knightRush: 'knight:rush',
+    knightArea: 'knight:area',
     hunterShot: 'hunter:shoot',
     hunterTrap: 'hunter:trap',
+    hunterRoll: 'hunter:roll',
+    hunterRite: 'hunter:rite',
     mageBolt: 'mage:bolt',
     mageArea: 'mage:cast-area',
     mageBlink: 'mage:blink',
+    mageWard: 'mage:ward',
 };
 
 const planarDistance = (a: Vec3Like, b: Vec3Like): number => Math.hypot(a.x - b.x, a.z - b.z);
@@ -81,6 +86,8 @@ const targetPayload = (target: GovernorEnemyObservation): { targetId: string } =
 const actionReady = (state: GovernorObservation, name: GovernorActionName): boolean =>
     state.actor.readyActions?.has(name) ?? true;
 const movementAvailable = (state: GovernorObservation): boolean => state.actor.movementAvailable ?? true;
+const hasAbility = (state: GovernorObservation, ability: string): boolean =>
+    state.actor.abilities?.has(ability) ?? false;
 
 const actionIntent = (
     binding: GovernorAction,
@@ -214,6 +221,22 @@ export class ClassGovernor {
                         ? actionIntent(this.#actions.knightUnblock)
                         : { kind: 'wait' };
                 }
+                if (
+                    (target.clusterSize ?? state.enemies.length) >= 3
+                    && state.actor.resource >= 20
+                    && hasAbility(state, 'knight-area')
+                    && actionReady(state, 'knightArea')
+                ) {
+                    return actionIntent(this.#actions.knightArea, targetPayload(target));
+                }
+                if (
+                    distance > 1.6
+                    && distance <= 3.5
+                    && hasAbility(state, 'knight-rush')
+                    && actionReady(state, 'knightRush')
+                ) {
+                    return actionIntent(this.#actions.knightRush, targetPayload(target));
+                }
                 return distance > 1.6
                     ? movementAvailable(state)
                         ? { kind: 'move-to', target: target.position, speed: 1.05 }
@@ -223,6 +246,13 @@ export class ClassGovernor {
                         : { kind: 'wait' };
 
             case 'hunter':
+                if (
+                    distance < 3
+                    && hasAbility(state, 'hunter-roll')
+                    && actionReady(state, 'hunterRoll')
+                ) {
+                    return actionIntent(this.#actions.hunterRoll);
+                }
                 if (
                     (target.clusterSize ?? state.enemies.length) >= 3
                     && state.actor.abilities?.has('trap')
@@ -236,11 +266,27 @@ export class ClassGovernor {
                 if (distance > 8 || target.lineOfSight === false) return movementAvailable(state)
                     ? { kind: 'move-to', target: target.position }
                     : { kind: 'wait' };
+                if (
+                    target.maxHp >= 180
+                    && state.actor.resource >= 30
+                    && hasAbility(state, 'hunter-rite')
+                    && actionReady(state, 'hunterRite')
+                ) {
+                    return actionIntent(this.#actions.hunterRite, targetPayload(target));
+                }
                 return actionReady(state, 'hunterShot')
                     ? actionIntent(this.#actions.hunterShot, targetPayload(target))
                     : { kind: 'wait' };
 
             case 'mage':
+                if (
+                    target.telegraphing
+                    && distance <= 5
+                    && hasAbility(state, 'mage-ward')
+                    && actionReady(state, 'mageWard')
+                ) {
+                    return actionIntent(this.#actions.mageWard);
+                }
                 if (distance < 3 && state.actor.abilities?.has('blink') && actionReady(state, 'mageBlink')) {
                     return actionIntent(this.#actions.mageBlink, targetPayload(target));
                 }

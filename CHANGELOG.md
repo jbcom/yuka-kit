@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0
+
+- Extend reusable class governors to use the full opt-in combat kit exposed by
+  a game: Knight rush and area attacks, Hunter roll and boss rite, and Mage
+  ward, while preserving older integrations that do not advertise them.
+
 ## 0.10.0
 
 - Add deterministic, snapshot-backed per-map budgets for encounter table
