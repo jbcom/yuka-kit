@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.16.0
+
+- Prevent corridor kiting deadlocks by making Hunters approach occluded route
+  waypoints before evaluating close-range retreats, and fire a semantically
+  ready basic shot between evasive rolls instead of retreating forever.
+- Use the Hunter's evasive roll against ranged startup telegraphs, not only
+  enemies already inside melee distance.
+
 ## 0.15.0
 
 - Add strict, radius-aware AABB projectile clearance for ranged governors,

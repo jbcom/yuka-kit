@@ -233,7 +233,7 @@ export class ClassGovernor {
         if (this.#className === 'knight' && knightThreat && actionReady(state, 'knightBlock')) {
             return actionIntent(this.#actions.knightBlock, targetPayload(knightThreat));
         }
-        const hunterThreat = nearestTelegraphingEnemy(state, 3);
+        const hunterThreat = nearestTelegraphingEnemy(state, 8);
         if (
             this.#className === 'hunter'
             && hunterThreat
@@ -313,6 +313,17 @@ export class ClassGovernor {
             }
 
             case 'hunter':
+                const hunterTelegraphingEnemy = nearestTelegraphingEnemy(state, 8);
+                if (
+                    hunterTelegraphingEnemy
+                    && hasAbility(state, 'hunter-roll')
+                    && actionReady(state, 'hunterRoll')
+                ) {
+                    return actionIntent(this.#actions.hunterRoll);
+                }
+                if (distance > 8 || target.lineOfSight === false) return movementAvailable(state)
+                    ? { kind: 'move-to', target: target.position }
+                    : { kind: 'wait' };
                 if (
                     distance < 3
                     && hasAbility(state, 'hunter-roll')
@@ -327,12 +338,14 @@ export class ClassGovernor {
                 ) {
                     return actionIntent(this.#actions.hunterTrap, targetPayload(target));
                 }
-                if (distance < 4) return movementAvailable(state)
-                    ? { kind: 'move-away', from: target.position, speed: 1.15 }
-                    : { kind: 'wait' };
-                if (distance > 8 || target.lineOfSight === false) return movementAvailable(state)
-                    ? { kind: 'move-to', target: target.position }
-                    : { kind: 'wait' };
+                if (distance < 4) {
+                    if (actionReady(state, 'hunterShot')) {
+                        return actionIntent(this.#actions.hunterShot, targetPayload(target));
+                    }
+                    return movementAvailable(state)
+                        ? { kind: 'move-away', from: target.position, speed: 1.15 }
+                        : { kind: 'wait' };
+                }
                 if (
                     target.maxHp >= 180
                     && state.actor.resource >= 30
