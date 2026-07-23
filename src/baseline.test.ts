@@ -25,6 +25,7 @@ describe('published 0.1.0 source restoration', () => {
       'createVehicle',
       'followWaypoints',
       'hasAabbLineOfSight2D',
+      'hasAabbProjectileClearance2D',
       'inVisionCone',
       'manage',
       'seek',
@@ -105,6 +106,31 @@ describe('published 0.1.0 source restoration', () => {
     expect(api.hasAabbLineOfSight2D({ x: 0, y: 0 }, { x: 4, y: 0 }, [wall])).toBe(false);
     expect(api.hasAabbLineOfSight2D({ x: 0, y: 3 }, { x: 4, y: 3 }, [wall])).toBe(true);
     expect(api.segmentIntersectsAabb2D({ x: 0, y: 0 }, { x: 1.5, y: 0 }, wall)).toBe(false);
+
+    const grottoWall = { x: 304, y: 272, width: 64, height: 128 };
+    const firingPosition = { x: 309.798, y: 346.416 };
+    const shieldSlime = { x: 400, y: 304 };
+    expect(api.hasAabbLineOfSight2D(firingPosition, shieldSlime, [grottoWall], 10)).toBe(true);
+    expect(api.hasAabbProjectileClearance2D(
+      firingPosition,
+      shieldSlime,
+      [grottoWall],
+      { radius: 8, muzzleOffset: 12, targetRadius: 6 },
+    )).toBe(false);
+    expect(api.hasAabbProjectileClearance2D(
+      { x: 309.798, y: 360 },
+      { x: 400, y: 360 },
+      [grottoWall],
+      { radius: 8, muzzleOffset: 12, targetRadius: 6 },
+    )).toBe(true);
+
+    const towerWall = { x: 208, y: 312, width: 64, height: 176 };
+    expect(api.hasAabbProjectileClearance2D(
+      { x: 210.46, y: 415.481 },
+      { x: 288, y: 368 },
+      [towerWall],
+      { radius: 9, muzzleOffset: 12, targetRadius: 6 },
+    )).toBe(false);
 
     const fsm = new StateMachine(new Vehicle());
     fsm.add('idle', new State());

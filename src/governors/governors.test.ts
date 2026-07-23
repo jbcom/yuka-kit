@@ -168,6 +168,21 @@ describe('ClassGovernor', () => {
         })).intent).toEqual({ kind: 'wait' });
     });
 
+    it('trusts authoritative readiness for a sustainable Mage basic attack', () => {
+        const mage = new ClassGovernor({ className: 'mage' });
+        const actor = {
+            ...state().actor,
+            resource: 4,
+            readyActions: new Set(['mageBolt'] as const),
+            movementAvailable: true,
+        };
+
+        expect(mage.decide(state({ actor }))).toMatchObject({
+            goal: 'combat',
+            intent: { kind: 'action', action: 'mage:bolt', payload: { targetId: 'slime' } },
+        });
+    });
+
     it('releases the knight guard through an explicit public action before moving', () => {
         const knight = new ClassGovernor({
             className: 'knight',
