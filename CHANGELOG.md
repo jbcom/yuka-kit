@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.0
+
+- Add deterministic, snapshot-backed per-map budgets for encounter table
+  entries so authored journeys can bound random combat without disabling it.
+
 ## 0.9.0
 
 - Let encounter integrations suppress new Yuka-directed formation rolls while

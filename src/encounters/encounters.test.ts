@@ -51,6 +51,25 @@ describe('EncounterDirector', () => {
         });
         expect(director.consider(probe(2), table).spawned).toBe(true);
     });
+
+    it('persists independent per-map encounter budgets', () => {
+        const director = new EncounterDirector({ seed: 17, baseChance: 1, minStepsBetweenEncounters: 0 });
+        const budgeted: EncounterTableEntry[] = [{ id: 'road-pack', weight: 1, maxSpawnsPerMap: 1 }];
+
+        expect(director.consider(probe(1), budgeted).spawned).toBe(true);
+        expect(director.consider(probe(2), budgeted)).toEqual({
+            spawned: false,
+            reason: 'no-eligible-entry',
+        });
+
+        const restored = new EncounterDirector({ seed: 99, baseChance: 1, minStepsBetweenEncounters: 0 });
+        restored.restore(director.snapshot());
+        expect(restored.consider({ ...probe(3), mapId: 'ashfen' }, budgeted).spawned).toBe(true);
+        expect(restored.consider({ ...probe(4), mapId: 'thornwood' }, budgeted)).toEqual({
+            spawned: false,
+            reason: 'no-eligible-entry',
+        });
+    });
 });
 
 describe('generateFormation', () => {
