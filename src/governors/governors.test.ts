@@ -188,4 +188,25 @@ describe('ClassGovernor', () => {
             payload: { active: false },
         });
     });
+
+    it('holds knight guard until the telegraphed attack leaves startup', () => {
+        const knight = new ClassGovernor({ className: 'knight' });
+        const actor = {
+            ...state().actor,
+            guarding: true,
+            movementAvailable: false,
+            readyActions: new Set(['knightUnblock'] as const),
+        };
+
+        expect(knight.decide(state({
+            actor,
+            enemies: [{
+                id: 'rootling',
+                position: { x: 2, y: 0, z: 0 },
+                hp: 60,
+                maxHp: 60,
+                telegraphing: true,
+            }],
+        })).intent).toEqual({ kind: 'wait', reason: 'hold-guard-through-telegraph' });
+    });
 });

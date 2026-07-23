@@ -52,6 +52,23 @@ const nearestEnemy = (state: GovernorObservation): GovernorEnemyObservation | un
                 : nearest;
         }, undefined);
 
+const nearestTelegraphingEnemy = (
+    state: GovernorObservation,
+    range: number,
+): GovernorEnemyObservation | undefined =>
+    state.enemies
+        .filter((enemy) =>
+            enemy.hp > 0
+            && enemy.telegraphing === true
+            && planarDistance(state.actor.position, enemy.position) <= range,
+        )
+        .reduce<GovernorEnemyObservation | undefined>((nearest, enemy) => {
+            if (!nearest) return enemy;
+            return planarDistance(state.actor.position, enemy.position) < planarDistance(state.actor.position, nearest.position)
+                ? enemy
+                : nearest;
+        }, undefined);
+
 class GovernorEvaluator extends GoalEvaluator {
     readonly #goal: GovernorDecision['goal'];
     readonly #score: (owner: GovernorOwner) => number;
@@ -206,35 +223,33 @@ export class ClassGovernor {
         }
 
         const enemy = nearestEnemy(state);
-        const enemyDistance = enemy
-            ? planarDistance(state.actor.position, enemy.position)
-            : Number.POSITIVE_INFINITY;
-
+        const knightThreat = nearestTelegraphingEnemy(state, 2.5);
         if (this.#className === 'knight' && state.actor.guarding) {
+            if (knightThreat) return { kind: 'wait', reason: 'hold-guard-through-telegraph' };
             return actionReady(state, 'knightUnblock')
                 ? actionIntent(this.#actions.knightUnblock)
                 : { kind: 'wait' };
         }
-        if (enemy?.telegraphing) {
-            if (this.#className === 'knight' && enemyDistance <= 2.5 && actionReady(state, 'knightBlock')) {
-                return actionIntent(this.#actions.knightBlock, targetPayload(enemy));
-            }
-            if (
-                this.#className === 'hunter'
-                && enemyDistance <= 3
-                && hasAbility(state, 'hunter-roll')
-                && actionReady(state, 'hunterRoll')
-            ) {
-                return actionIntent(this.#actions.hunterRoll);
-            }
-            if (
-                this.#className === 'mage'
-                && enemyDistance <= 5
-                && hasAbility(state, 'mage-ward')
-                && actionReady(state, 'mageWard')
-            ) {
-                return actionIntent(this.#actions.mageWard);
-            }
+        if (this.#className === 'knight' && knightThreat && actionReady(state, 'knightBlock')) {
+            return actionIntent(this.#actions.knightBlock, targetPayload(knightThreat));
+        }
+        const hunterThreat = nearestTelegraphingEnemy(state, 3);
+        if (
+            this.#className === 'hunter'
+            && hunterThreat
+            && hasAbility(state, 'hunter-roll')
+            && actionReady(state, 'hunterRoll')
+        ) {
+            return actionIntent(this.#actions.hunterRoll);
+        }
+        const mageThreat = nearestTelegraphingEnemy(state, 5);
+        if (
+            this.#className === 'mage'
+            && mageThreat
+            && hasAbility(state, 'mage-ward')
+            && actionReady(state, 'mageWard')
+        ) {
+            return actionIntent(this.#actions.mageWard);
         }
 
         const recovery = state.recovery;
@@ -261,14 +276,16 @@ export class ClassGovernor {
         const distance = planarDistance(state.actor.position, target.position);
 
         switch (this.#className) {
-            case 'knight':
-                if (target.telegraphing && distance <= 2.5 && actionReady(state, 'knightBlock')) {
-                    return actionIntent(this.#actions.knightBlock, targetPayload(target));
-                }
+            case 'knight': {
+                const telegraphingEnemy = nearestTelegraphingEnemy(state, 2.5);
                 if (state.actor.guarding) {
+                    if (telegraphingEnemy) return { kind: 'wait', reason: 'hold-guard-through-telegraph' };
                     return actionReady(state, 'knightUnblock')
                         ? actionIntent(this.#actions.knightUnblock)
                         : { kind: 'wait' };
+                }
+                if (telegraphingEnemy && actionReady(state, 'knightBlock')) {
+                    return actionIntent(this.#actions.knightBlock, targetPayload(telegraphingEnemy));
                 }
                 if (
                     (target.clusterSize ?? state.enemies.length) >= 3
@@ -293,6 +310,7 @@ export class ClassGovernor {
                     : actionReady(state, 'knightStrike')
                         ? actionIntent(this.#actions.knightStrike, targetPayload(target))
                         : { kind: 'wait' };
+            }
 
             case 'hunter':
                 if (

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.0
+
+- Keep the Knight's authoritative guard raised for the full nearby enemy
+  startup telegraph, including when a different nearby attacker is the
+  immediate threat, and release it only after the danger window ends.
+
 ## 0.12.0
 
 - Add path-aware recovery objectives to class-governor observations so

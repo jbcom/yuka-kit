@@ -216,7 +216,8 @@ which recovery sources are currently valid.
 
 Knight adapters bind both `knightBlock` and `knightUnblock`; the latter should
 map to the engine's public guard action with `{ active: false }`. Observing
-`actor.guarding` lets the governor release a successful block before resuming
+`actor.guarding` lets the governor hold that guard through the complete enemy
+startup telegraph, then release it through the public action before resuming
 movement.
 
 ### RPGJS Solo (separate entry: `@arcade-cabinet/ai-yuka/solo`)
