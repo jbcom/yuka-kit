@@ -66,6 +66,7 @@ export class EncounterDirector<Payload = unknown> {
         if (probe.step <= this.#lastProbeStep) return { spawned: false, reason: 'duplicate-step' };
         this.#lastProbeStep = probe.step;
         if (probe.safe || (probe.danger ?? 1) <= 0) return { spawned: false, reason: 'safe' };
+        if (probe.encounterActive) return { spawned: false, reason: 'active-encounter' };
         if (probe.step - this.#lastEncounterStep < this.#minStepsBetween) {
             return { spawned: false, reason: 'cooldown' };
         }
