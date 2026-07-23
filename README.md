@@ -196,10 +196,12 @@ const smith = new RoutineAgent({
 `ClassGovernor` is the reusable Yuka brain used by AI-governed playthroughs.
 Knight, hunter, and mage are distinct policies rather than reskins:
 
-- knight closes to melee range, reads telegraphs, and blocks before striking;
-- hunter maintains a ranged band, kites pressure, and traps groups;
-- mage blinks out of danger, spends resource on area control, and falls back
-  to ranged bolts or retreat.
+- knight closes to melee range, reads telegraphs, blocks, rushes priority
+  targets, and spends resource on area pressure;
+- hunter maintains a ranged band, rolls out of close pressure, traps groups,
+  and commits its rite against boss-grade targets;
+- mage wards telegraphed pressure, blinks out of danger, spends resource on
+  area control, and falls back to ranged bolts or retreat.
 
 Survival, safe interaction, combat, objective, exploration, and idle are
 competing `GoalEvaluator`s. The brain returns intent only; it cannot mutate a

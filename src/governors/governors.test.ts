@@ -10,7 +10,15 @@ const state = (overrides: Partial<GovernorObservation> = {}): GovernorObservatio
         maxHp: 100,
         resource: 50,
         maxResource: 50,
-        abilities: new Set(['blink', 'trap']),
+        abilities: new Set([
+            'blink',
+            'trap',
+            'knight-area',
+            'knight-rush',
+            'hunter-roll',
+            'hunter-rite',
+            'mage-ward',
+        ]),
     },
     enemies: [{
         id: 'slime',
@@ -51,6 +59,35 @@ describe('ClassGovernor', () => {
         expect(hunter.decide(state({
             actor: { ...state().actor, hp: 10, healAvailable: true },
         })).intent).toMatchObject({ kind: 'action', action: 'use-heal' });
+    });
+
+    it('governs every distinct class ability exposed by a game', () => {
+        const knight = new ClassGovernor({ className: 'knight' });
+        expect(knight.decide(state({
+            enemies: [{ id: 'pack', position: { x: 1, y: 0, z: 0 }, hp: 60, maxHp: 60, clusterSize: 3 }],
+        })).intent).toMatchObject({ kind: 'action', action: 'knight:area' });
+        expect(knight.decide(state({
+            enemies: [{ id: 'skirmisher', position: { x: 3, y: 0, z: 0 }, hp: 60, maxHp: 60 }],
+        })).intent).toMatchObject({ kind: 'action', action: 'knight:rush' });
+
+        const hunter = new ClassGovernor({ className: 'hunter' });
+        expect(hunter.decide(state({
+            enemies: [{ id: 'flanker', position: { x: 2, y: 0, z: 0 }, hp: 40, maxHp: 40 }],
+        })).intent).toMatchObject({ kind: 'action', action: 'hunter:roll' });
+        expect(hunter.decide(state({
+            enemies: [{ id: 'boss', position: { x: 6, y: 0, z: 0 }, hp: 220, maxHp: 240 }],
+        })).intent).toMatchObject({ kind: 'action', action: 'hunter:rite' });
+
+        const mage = new ClassGovernor({ className: 'mage' });
+        expect(mage.decide(state({
+            enemies: [{
+                id: 'duelist',
+                position: { x: 4, y: 0, z: 0 },
+                hp: 80,
+                maxHp: 80,
+                telegraphing: true,
+            }],
+        })).intent).toMatchObject({ kind: 'action', action: 'mage:ward' });
     });
 
     it('binds class decisions directly to validated Solo action payloads', () => {
