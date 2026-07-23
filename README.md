@@ -155,6 +155,8 @@ cells start→end inclusive, `[]` when unreachable.
 - `createVisionSensor(raycastFn, { range, isTarget })` — line-of-sight over any
   physics engine (Rapier, cannon, custom) via an adapter function.
 - `inVisionCone(origin, forward, target, range, halfAngleRad)` — pure-math cone test.
+- `hasAabbLineOfSight2D(from, to, obstacles, padding?)` — physics-neutral
+  collision visibility for center-positioned rectangular obstacles.
 - `applyPerception(seen, fsm, stateWhenSeen)` — the aethermoor raycast→FSM
   pattern: transition once on sighting.
 

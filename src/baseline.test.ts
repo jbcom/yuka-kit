@@ -24,6 +24,7 @@ describe('published 0.1.0 source restoration', () => {
       'createEntityManager',
       'createVehicle',
       'followWaypoints',
+      'hasAabbLineOfSight2D',
       'inVisionCone',
       'manage',
       'seek',
@@ -100,6 +101,10 @@ describe('published 0.1.0 source restoration', () => {
     expect(
       api.inVisionCone(origin, { x: 1, y: 0, z: 0 }, { x: -3, y: 0, z: 0 }, 4, Math.PI / 4),
     ).toBe(false);
+    const wall = { x: 2, y: 0, width: 1, height: 4 };
+    expect(api.hasAabbLineOfSight2D({ x: 0, y: 0 }, { x: 4, y: 0 }, [wall])).toBe(false);
+    expect(api.hasAabbLineOfSight2D({ x: 0, y: 3 }, { x: 4, y: 3 }, [wall])).toBe(true);
+    expect(api.segmentIntersectsAabb2D({ x: 0, y: 0 }, { x: 1.5, y: 0 }, wall)).toBe(false);
 
     const fsm = new StateMachine(new Vehicle());
     fsm.add('idle', new State());
