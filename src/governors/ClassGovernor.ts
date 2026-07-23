@@ -346,9 +346,9 @@ export class ClassGovernor {
                     : { kind: 'wait' };
 
             case 'mage':
+                const telegraphingEnemy = nearestTelegraphingEnemy(state, 5);
                 if (
-                    target.telegraphing
-                    && distance <= 5
+                    telegraphingEnemy
                     && hasAbility(state, 'mage-ward')
                     && actionReady(state, 'mageWard')
                 ) {

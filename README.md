@@ -10,8 +10,9 @@ This Gitea repository is the source of truth for the private package. Version
 `0.1.0` restored the originally published artifact; `0.2.0` added the production
 systems needed by RPGJS Solo games, `0.3.0` added structured combat bindings,
 `0.4.0` added authoritative command-availability observations, `0.7.0`
-added versioned routine and combat-FSM state, and `0.8.0` adds actionable
-Yuka-arbitrated combat tactics. All releases
+added versioned routine and combat-FSM state, `0.8.0` added actionable
+Yuka-arbitrated combat tactics, and `0.14.0` makes Mage pack defense react to
+every nearby telegraph. All releases
 target Node.js 24 LTS and pin the current underlying Yuka release.
 
 Extracted from **bok** (winner of the ai-yuka tournament — the deepest yuka
