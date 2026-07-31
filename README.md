@@ -11,8 +11,9 @@ This Gitea repository is the source of truth for the private package. Version
 systems needed by RPGJS Solo games, `0.3.0` added structured combat bindings,
 `0.4.0` added authoritative command-availability observations, `0.7.0`
 added versioned routine and combat-FSM state, `0.8.0` added actionable
-Yuka-arbitrated combat tactics, and `0.14.0` makes Mage pack defense react to
-every nearby telegraph. All releases
+Yuka-arbitrated combat tactics, `0.14.0` makes Mage pack defense react to every
+nearby telegraph, and `0.17.0` adds strict authored-state routine selection and
+public cross-map action intents. All releases
 target Node.js 24 LTS and pin the current underlying Yuka release.
 
 Extracted from **bok** (winner of the ai-yuka tournament — the deepest yuka
@@ -197,6 +198,82 @@ const smith = new RoutineAgent({
 });
 ```
 
+The legacy `RoutineSchedule` remains ordered and clock-only: its first matching
+entry wins, `startMinute`/`endMinute` remain required numbers, no matching entry
+returns `home`, and a cross-map target still emits `transfer-map`. State-aware
+selection is a separate opt-in contract:
+
+```ts
+import {
+  RoutineAgent,
+  type StateAwareRoutineSchedule,
+} from '@arcade-cabinet/ai-yuka';
+
+const schedule: StateAwareRoutineSchedule = {
+  entries: [
+    {
+      id: 'accepted-keep-work',
+      // Omit both minute bounds for an all-day phase/cue slot. A single
+      // bound is also legal for an authored open-ended window.
+      mapId: 'keep',
+      anchorId: 'keep-custody-work',
+      position: { x: 4, y: 0, z: 6 },
+      action: 'perform-scheduled-activity',
+      when: {
+        phaseIds: ['custody-work', 'custody-aftermath'],
+        days: [2, 5],
+        requiredCueIds: ['gate-admitted'],
+        forbiddenCueIds: ['route-blocked'],
+        publicPreconditions: [
+          { key: 'doorOpen', operator: 'equals', value: true },
+        ],
+      },
+    },
+    {
+      id: 'lawful-staging',
+      fallback: true,
+      startMinute: 480,
+      endMinute: 1_020,
+      mapId: 'town',
+      position: { x: 10, y: 0, z: 8 },
+      action: 'wait-at-staging-anchor',
+    },
+  ],
+};
+
+const agent = new RoutineAgent({
+  schedule,
+  slotSelection: 'state-aware',
+  mapCrossMapTransition: ({ target, observation }) => ({
+    kind: 'action',
+    action: 'request-scheduled-transition',
+    payload: {
+      slotId: target.id,
+      destinationMapId: target.mapId,
+      destinationAnchorId: target.anchorId,
+      observationTick: observation.observationTick,
+    },
+  }),
+});
+```
+
+State-aware conditions are declarative and scalar-only; there are no callback
+predicates that can capture mutable engine state or hidden narrative memory.
+`phaseId` selects one exact phase, while `phaseIds` means any one exact member;
+defining both on a slot is invalid. Primary matches always outrank declared
+fallbacks. Within a group, phase/cue specificity outranks public preconditions,
+then authored day/clock specificity. The narrowest matching phase set wins.
+An equal-specificity overlap throws `RoutineSlotConflictError`; no matching
+slot throws `RoutineSlotNotFoundError`. Both failures occur before Yuka
+arbitration or the transition mapper, so no AI command is proposed.
+Strict schedules do not require `home`; consumers never fabricate an ignored
+map or coordinate merely to satisfy the type.
+
+The transition mapper receives a frozen public observation and destination
+context and must return a non-empty `action` intent. It cannot return
+`transfer-map`; the authoritative game action may validate the request and
+emit a system-owned transfer. Omitting the mapper preserves existing behavior.
+
 ### class governors
 
 `ClassGovernor` is the reusable Yuka brain used by AI-governed playthroughs.
@@ -313,7 +390,7 @@ name) have `rememberSighting`/`writeIntent` helpers on the bridge.
 pnpm test
 pnpm typecheck
 pnpm build
-pnpm verify       # all of the above plus ESM/CommonJS package smoke
+pnpm verify       # all of the above plus packed fresh-consumer ESM/CJS/type smoke
 ```
 
 Before publishing, direct dependencies and peers must be checked against their

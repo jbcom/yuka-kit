@@ -11,6 +11,9 @@ for (const entry of [esm, cjs]) {
   assert.equal(typeof entry.createEntityManager, 'function');
   assert.equal(typeof entry.createBrain, 'function');
   assert.equal(typeof entry.astar, 'function');
+  assert.equal(typeof entry.resolveStateAwareRoutineTarget, 'function');
+  assert.equal(typeof entry.RoutineSlotConflictError, 'function');
+  assert.equal(typeof entry.RoutineSlotNotFoundError, 'function');
 }
 
 for (const entry of [soloEsm, soloCjs]) {

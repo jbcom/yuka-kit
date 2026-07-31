@@ -1,11 +1,25 @@
-export { RoutineAgent, resolveRoutineTarget } from './RoutineAgent.js';
+export {
+    RoutineAgent,
+    RoutineSlotConflictError,
+    RoutineSlotNotFoundError,
+    resolveRoutineTarget,
+    resolveStateAwareRoutineTarget,
+} from './RoutineAgent.js';
 export type {
     ResolvedRoutineTarget,
+    RoutineActionIntent,
     RoutineAgentOptions,
     RoutineAgentSnapshot,
+    RoutineCrossMapTransitionContext,
+    RoutineCrossMapTransitionMapper,
     RoutineDecision,
     RoutineDestination,
     RoutineObservation,
+    RoutinePublicPrecondition,
+    RoutinePublicValue,
     RoutineSchedule,
     RoutineScheduleEntry,
+    RoutineSlotConditions,
+    StateAwareRoutineSchedule,
+    StateAwareRoutineScheduleEntry,
 } from './RoutineAgent.js';
