@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.17.0
+
+- Add opt-in, state-aware NPC slot selection over exact authored days, phase
+  sets, accepted cue sets, clock windows, and scalar public preconditions.
+- Fail closed when no declared slot/fallback matches or equally specific slots
+  overlap; source order and the legacy home destination are never implicit
+  strict-mode tiebreakers.
+- Add an opt-in cross-map transition mapper restricted to public action intents,
+  while preserving the legacy raw `transfer-map` behavior by default.
+- Preserve the required-number `RoutineScheduleEntry` contract and expose
+  separate state-aware schedule types with optional/open-ended clock windows
+  and no fabricated home destination.
+- Verify packed ESM, CommonJS, and declarations in a clean external consumer,
+  including legacy TypeScript arithmetic over required clock fields.
+- Align CI to Node.js 24.18.1 and the repository to pnpm 11.18.0.
+
 ## 0.16.0
 
 - Prevent corridor kiting deadlocks by making Hunters approach occluded route

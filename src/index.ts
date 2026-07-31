@@ -52,16 +52,30 @@ export type {
     FormationResult,
     FormationSpec,
 } from './encounters/index.js';
-export { RoutineAgent, resolveRoutineTarget } from './routines/index.js';
+export {
+    RoutineAgent,
+    RoutineSlotConflictError,
+    RoutineSlotNotFoundError,
+    resolveRoutineTarget,
+    resolveStateAwareRoutineTarget,
+} from './routines/index.js';
 export type {
     ResolvedRoutineTarget,
+    RoutineActionIntent,
     RoutineAgentOptions,
     RoutineAgentSnapshot,
+    RoutineCrossMapTransitionContext,
+    RoutineCrossMapTransitionMapper,
     RoutineDecision,
     RoutineDestination,
     RoutineObservation,
+    RoutinePublicPrecondition,
+    RoutinePublicValue,
     RoutineSchedule,
     RoutineScheduleEntry,
+    RoutineSlotConditions,
+    StateAwareRoutineSchedule,
+    StateAwareRoutineScheduleEntry,
 } from './routines/index.js';
 export { ClassGovernor, createClassGovernor } from './governors/index.js';
 export type {

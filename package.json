@@ -1,6 +1,6 @@
 {
   "name": "@arcade-cabinet/ai-yuka",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "Shared Yuka AI toolkit with deterministic encounters, NPC routines, class governors, and RPGJS Solo command-driven playthroughs.",
   "type": "module",
   "license": "UNLICENSED",
@@ -12,7 +12,7 @@
   "engines": {
     "node": ">=24"
   },
-  "packageManager": "pnpm@11.16.0",
+  "packageManager": "pnpm@11.18.0",
   "publishConfig": {
     "access": "restricted",
     "registry": "https://redacted-private-registry.example/api/packages/arcade-cabinet/npm/"
@@ -52,7 +52,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "verify": "pnpm run typecheck && pnpm run test && pnpm run build && node scripts/smoke-package.mjs"
+    "smoke:consumer": "node scripts/smoke-fresh-consumer.mjs",
+    "verify": "pnpm run typecheck && pnpm run test && pnpm run build && node scripts/smoke-package.mjs && pnpm run smoke:consumer"
   },
   "peerDependencies": {
     "koota": "0.6.6",
