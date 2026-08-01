@@ -8,8 +8,9 @@
 - Add synchronous SHA-256 derivation and validation for deterministic stream,
   proposal, and receipt ids through pinned `@noble/hashes@2.2.0`.
 - Add a strict Solo dispatch envelope containing the complete semantic
-  proposal, Rules tick, observation digest, and expected Rules-view SHA-256;
-  trusted compilation now occurs only after current-state validation.
+  proposal, Rules tick, observation digest, and caller-defined deterministic
+  Rules precondition SHA-256; trusted compilation now occurs only after
+  current-state validation.
 - Restrict strict compiler output to AI-source move, stop, or action commands,
   while preserving all legacy intent and transfer-map adapter behavior.
 - Reject sparse, accessor-backed, named-property, custom-prototype, and mutable

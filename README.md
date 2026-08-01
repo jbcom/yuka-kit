@@ -369,12 +369,14 @@ writes runtime state directly.
 
 Strict integrations use `createAICommandDispatchEnvelope()`. The envelope
 contains the complete frozen semantic proposal plus duplicated identity,
-Rules tick, observation digest, and expected complete Rules-view SHA-256. It
-contains no precompiled command. `dispatchEnvelope()` first revalidates those
-values against current public state and only then invokes the supplied trusted
-binding compiler. The compiler's output is closed to `move`, `stop`, or
-registered `action` with `source: 'ai'`; illegal transfers, mutable references,
-non-JSON payloads, and extra fields fail before Solo dispatch.
+Rules tick, observation digest, and a caller-defined deterministic Rules
+precondition SHA-256. That precondition may be a binding-scoped read-set digest
+instead of a digest of the entire Rules view. The envelope contains no
+precompiled command. `dispatchEnvelope()` first revalidates those values
+against current public state and only then invokes the supplied trusted binding
+compiler. The compiler's output is closed to `move`, `stop`, or registered
+`action` with `source: 'ai'`; illegal transfers, mutable references, non-JSON
+payloads, and extra fields fail before Solo dispatch.
 
 ```ts
 import {
