@@ -12,6 +12,9 @@ for (const entry of [esm, cjs]) {
   assert.equal(typeof entry.createBrain, 'function');
   assert.equal(typeof entry.astar, 'function');
   assert.equal(typeof entry.resolveStateAwareRoutineTarget, 'function');
+  assert.equal(typeof entry.validateFsmStateSnapshot, 'function');
+  assert.equal(typeof entry.validateRoutineAgentSnapshot, 'function');
+  assert.equal(typeof entry.validateEncounterDirectorSnapshot, 'function');
   assert.equal(typeof entry.RoutineSlotConflictError, 'function');
   assert.equal(typeof entry.RoutineSlotNotFoundError, 'function');
   assert.equal(typeof entry.deriveDeterministicIdentity, 'function');

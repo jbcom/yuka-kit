@@ -4,6 +4,7 @@ export {
     RoutineSlotNotFoundError,
     resolveRoutineTarget,
     resolveStateAwareRoutineTarget,
+    validateRoutineAgentSnapshot,
 } from './RoutineAgent.js';
 export type {
     ResolvedRoutineTarget,

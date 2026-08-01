@@ -23,6 +23,7 @@ export {
     getStateName,
     restoreFsmState,
     snapshotFsmState,
+    validateFsmStateSnapshot,
     type FsmStateSnapshot,
 } from './fsm/createFsm.js';
 export { getDt, setDt } from './fsm/dt.js';
@@ -39,7 +40,7 @@ export { type Aabb2Like, type AabbProjectileClearanceOptions, applyPerception, c
 // presets
 export { AI_TYPE_PRESETS, createBrainForType } from './presets/aiTypes.js';
 // production orchestration
-export { EncounterDirector, generateFormation } from './encounters/index.js';
+export { EncounterDirector, generateFormation, validateEncounterDirectorSnapshot } from './encounters/index.js';
 export type {
     EncounterDecision,
     EncounterDirectorOptions,
@@ -58,6 +59,7 @@ export {
     RoutineSlotNotFoundError,
     resolveRoutineTarget,
     resolveStateAwareRoutineTarget,
+    validateRoutineAgentSnapshot,
 } from './routines/index.js';
 export type {
     ResolvedRoutineTarget,

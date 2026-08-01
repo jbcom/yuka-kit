@@ -1,6 +1,12 @@
 import { GameEntity, GoalEvaluator, Think, type GameEntity as YukaEntity } from 'yuka';
 import type { Vec3Like } from '../core/types.js';
 import type { AgentIntent } from '../intents.js';
+import {
+    requireNonEmptyString,
+    SNAPSHOT_ARRAY_LIMIT,
+    validateClosedSnapshotRecord,
+    validateSnapshotArray,
+} from '../persistence/snapshotValidation.js';
 
 export interface RoutineDestination {
     mapId: string;
@@ -129,6 +135,33 @@ export interface RoutineAgentSnapshot {
     schema: 'arcade-ai-yuka-routine';
     version: 1;
     completedActivities: string[];
+}
+
+/** Validate and normalize an untrusted JSON routine snapshot without mutating an agent. */
+export function validateRoutineAgentSnapshot(snapshot: unknown): RoutineAgentSnapshot {
+    const record = validateClosedSnapshotRecord(
+        snapshot,
+        ['schema', 'version', 'completedActivities'],
+        [],
+        'Routine agent snapshot',
+    );
+    if (record.schema !== 'arcade-ai-yuka-routine' || record.version !== 1) {
+        throw new TypeError('Unsupported routine agent snapshot');
+    }
+    const activities = validateSnapshotArray(record.completedActivities, 'Routine snapshot activities');
+    if (activities.some((key) => typeof key !== 'string')) {
+        throw new TypeError('Routine snapshot activities must be strings');
+    }
+    const completedActivities = activities.map((key, index) =>
+        requireNonEmptyString(key, `Routine snapshot activities[${index}]`));
+    if (new Set(completedActivities).size !== completedActivities.length) {
+        throw new TypeError('Routine snapshot activities must be unique');
+    }
+    return {
+        schema: 'arcade-ai-yuka-routine',
+        version: 1,
+        completedActivities,
+    };
 }
 
 interface RoutineOwner extends YukaEntity {
@@ -605,7 +638,15 @@ export class RoutineAgent {
 
     /** Mark a dispatched activity accepted so it executes only once per game day. */
     acknowledge(decision: RoutineDecision, accepted: boolean): void {
-        if (accepted && decision.activityKey) this.#completedActivities.add(decision.activityKey);
+        if (!accepted || !decision.activityKey || this.#completedActivities.has(decision.activityKey)) {
+            return;
+        }
+        if (this.#completedActivities.size >= SNAPSHOT_ARRAY_LIMIT) {
+            throw new RangeError(
+                `Routine completed activity persistence capacity is ${SNAPSHOT_ARRAY_LIMIT}`,
+            );
+        }
+        this.#completedActivities.add(decision.activityKey);
     }
 
     resetDay(day: number): void {
@@ -623,15 +664,9 @@ export class RoutineAgent {
         };
     }
 
-    restore(snapshot: RoutineAgentSnapshot): void {
-        if (snapshot.schema !== 'arcade-ai-yuka-routine' || snapshot.version !== 1) {
-            throw new TypeError('Unsupported routine agent snapshot');
-        }
-        if (!Array.isArray(snapshot.completedActivities)
-            || snapshot.completedActivities.some((key) => typeof key !== 'string')) {
-            throw new TypeError('Routine snapshot activities must be strings');
-        }
+    restore(snapshot: unknown): void {
+        const validated = validateRoutineAgentSnapshot(snapshot);
         this.#completedActivities.clear();
-        for (const key of snapshot.completedActivities) this.#completedActivities.add(key);
+        for (const key of validated.completedActivities) this.#completedActivities.add(key);
     }
 }
