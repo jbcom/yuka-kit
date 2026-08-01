@@ -1,5 +1,15 @@
 import type { Vec3Like } from '../core/types.js';
 import type { AgentIntent } from '../intents.js';
+import {
+    type AICommandDispatchContext,
+    type AICommandDispatchEnvelope,
+    type StrictSoloAICommand,
+    type StrictSoloJsonValue,
+    type TrustedAICommandCompiler,
+    validateAICommandDispatchContext,
+    validateAICommandDispatchEnvelope,
+    validateStrictSoloAICommand,
+} from './strict.js';
 
 export type SoloJsonValue =
     | boolean
@@ -39,6 +49,24 @@ export interface SoloDispatchOutcome {
     result?: SoloCommandResultLike;
 }
 
+export type AIEnvelopeDispatchRejectionCode =
+    | 'RULES_TICK_MISMATCH'
+    | 'OBSERVATION_DIGEST_MISMATCH'
+    | 'RULES_REVISION_MISMATCH';
+
+export type AIEnvelopeDispatchOutcome =
+    | Readonly<{
+        dispatched: false;
+        code: AIEnvelopeDispatchRejectionCode;
+        envelope: AICommandDispatchEnvelope;
+    }>
+    | Readonly<{
+        dispatched: true;
+        envelope: AICommandDispatchEnvelope;
+        command: SoloAICommand;
+        result: SoloCommandResultLike;
+    }>;
+
 const jsonValue = (value: unknown, seen = new WeakSet<object>()): SoloJsonValue | undefined => {
     if (value === undefined) return undefined;
     if (value === null || typeof value === 'boolean' || typeof value === 'string') return value;
@@ -62,6 +90,39 @@ const normalize = (x: number, y: number): { x: number; y: number } | undefined =
     const length = Math.hypot(x, y);
     if (length === 0) return undefined;
     return { x: x / length, y: y / length };
+};
+
+const strictJsonToSolo = (value: StrictSoloJsonValue): SoloJsonValue => {
+    if (value === null || typeof value === 'boolean' || typeof value === 'number' || typeof value === 'string') {
+        return value;
+    }
+    if (Array.isArray(value)) return value.map(strictJsonToSolo);
+    const output: Record<string, SoloJsonValue> = {};
+    for (const [key, entry] of Object.entries(value)) output[key] = strictJsonToSolo(entry);
+    return output;
+};
+
+const strictCommandToSolo = (command: StrictSoloAICommand): SoloAICommand => {
+    switch (command.type) {
+        case 'move':
+            return {
+                type: 'move',
+                entityId: command.entityId,
+                vector: { x: command.vector.x, y: command.vector.y },
+                ...(command.speed === undefined ? {} : { speed: command.speed }),
+                source: 'ai',
+            };
+        case 'stop':
+            return { type: 'stop', entityId: command.entityId, source: 'ai' };
+        case 'action':
+            return {
+                type: 'action',
+                entityId: command.entityId,
+                action: command.action,
+                ...(command.payload === undefined ? {} : { payload: strictJsonToSolo(command.payload) }),
+                source: 'ai',
+            };
+    }
 };
 
 /** Maps Yuka XZ-plane intents to the public RPGJS Solo command boundary. */
@@ -141,5 +202,53 @@ export class SoloCommandAdapter {
         const command = this.commandFor(entityId, currentPosition, intent);
         if (!command) return { waited: true };
         return { waited: false, command, result: this.#runtime.dispatch(command) };
+    }
+
+    /**
+     * Revalidate a strict proposal envelope against current public state, then
+     * invoke the trusted compiler and dispatch its legal move/stop/action.
+     *
+     * Legacy intent dispatch remains available through {@link dispatch}.
+     */
+    dispatchEnvelope(
+        envelope: unknown,
+        current: AICommandDispatchContext,
+        compile: TrustedAICommandCompiler,
+    ): AIEnvelopeDispatchOutcome {
+        const validatedEnvelope = validateAICommandDispatchEnvelope(envelope);
+        const validatedCurrent = validateAICommandDispatchContext(current);
+        if (validatedEnvelope.rulesTick !== validatedCurrent.rulesTick) {
+            return Object.freeze({
+                dispatched: false,
+                code: 'RULES_TICK_MISMATCH',
+                envelope: validatedEnvelope,
+            });
+        }
+        if (validatedEnvelope.observationDigest !== validatedCurrent.observationDigest) {
+            return Object.freeze({
+                dispatched: false,
+                code: 'OBSERVATION_DIGEST_MISMATCH',
+                envelope: validatedEnvelope,
+            });
+        }
+        if (validatedEnvelope.expectedRulesRevisionSha256 !== validatedCurrent.rulesRevisionSha256) {
+            return Object.freeze({
+                dispatched: false,
+                code: 'RULES_REVISION_MISMATCH',
+                envelope: validatedEnvelope,
+            });
+        }
+        if (typeof compile !== 'function') {
+            throw new TypeError('dispatchEnvelope requires a trusted compiler function');
+        }
+        const command = strictCommandToSolo(validateStrictSoloAICommand(
+            compile(validatedEnvelope.semanticProposal),
+        ));
+        return Object.freeze({
+            dispatched: true,
+            envelope: validatedEnvelope,
+            command,
+            result: this.#runtime.dispatch(command),
+        });
     }
 }

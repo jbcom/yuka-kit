@@ -34,15 +34,16 @@ export class SeededRandom {
         return this.#state;
     }
 
+    /** Return the current restorable xorshift32 state in the range 1..4294967295. */
     snapshot(): number {
         return this.#state;
     }
 
+    /** Restore an exact snapshot; zero is rejected because it is not a restorable generator state. */
     restore(state: number): void {
-        if (!Number.isInteger(state) || state < 0 || state > 0xffff_ffff) {
-            throw new TypeError('PRNG state must be an unsigned 32-bit integer');
+        if (!Number.isInteger(state) || state < 1 || state > 0xffff_ffff) {
+            throw new TypeError('PRNG state must be a restorable unsigned 32-bit integer from 1 through 4294967295');
         }
-        this.#state = state || 0x6d2b79f5;
+        this.#state = state;
     }
 }
-

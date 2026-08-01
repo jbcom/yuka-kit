@@ -13,7 +13,8 @@ systems needed by RPGJS Solo games, `0.3.0` added structured combat bindings,
 added versioned routine and combat-FSM state, `0.8.0` added actionable
 Yuka-arbitrated combat tactics, `0.14.0` makes Mage pack defense react to every
 nearby telegraph, and `0.17.0` adds strict authored-state routine selection and
-public cross-map action intents. All releases
+public cross-map action intents, and `0.18.0` adds the strict deterministic
+proposal and final-dispatch boundary. All releases
 target Node.js 24 LTS and pin the current underlying Yuka release.
 
 Extracted from **bok** (winner of the ai-yuka tournament — the deepest yuka
@@ -297,6 +298,60 @@ the authored healer/cache interaction only after reaching its usable radius.
 The game remains responsible for pathfinding, healing effects, and deciding
 which recovery sources are currently valid.
 
+### strict deterministic proposals
+
+The additive strict protocol is for authored integrations that must rank and
+replay governor choices without trusting Yuka evaluator insertion order or
+letting a governor construct a runtime command. `SemanticCommandProposal` is a
+closed, immutable shape containing only stable ids, integer ordinals, signed
+integer `utilityMicros`, and observation-entry targets. It cannot express a
+coordinate, payload, callback, teleport, transfer, or runtime reference.
+
+`rankSemanticCommandProposals()` returns the entire detached, frozen set in a
+host-independent total order; `selectSemanticCommandProposal()` also returns
+the first member or `null` for no dispatch. Target arrays are canonicalized by
+their authored role ordinal. All remaining string ties use unsigned NFC UTF-8
+bytes, never locale collation, floating comparison, random choice, or source
+insertion order.
+
+```ts
+import {
+  deriveDeterministicIdentity,
+  selectSemanticCommandProposal,
+  SEMANTIC_COMMAND_PROPOSAL_SCHEMA,
+} from '@arcade-cabinet/ai-yuka';
+
+const streamId = deriveDeterministicIdentity('stream', [
+  'npc-routine', 'policy:smith', 'entity:smith', 'scope:forge',
+]);
+const proposalId = deriveDeterministicIdentity('proposal', [
+  streamId, 8, 'goal:work', 'binding:perform-work', 0, 'visible:forge',
+]);
+const { selected, ordered } = selectSemanticCommandProposal([{
+  schema: SEMANTIC_COMMAND_PROPOSAL_SCHEMA,
+  streamId,
+  decisionOrdinal: 8,
+  observationDigest,
+  proposalId,
+  goalId: 'goal:work',
+  goalOrdinal: 1,
+  utilityMicros: 900_000,
+  bindingId: 'binding:perform-work',
+  bindingOrdinal: 2,
+  proposalOrdinal: 0,
+  targets: [{
+    roleId: 'workstation', roleOrdinal: 0,
+    targetObservationEntryId: 'visible:forge',
+  }],
+  reasonCode: 'WORKSTATION_AVAILABLE',
+}]);
+```
+
+`deriveDeterministicIdentity()` and `validateDeterministicIdentity()` hash a
+closed positional tuple with SHA-256 and return typed `stream:`, `proposal:`,
+or `receipt:` ids. They use the pinned browser-safe `@noble/hashes` library;
+tuple data permits only nested arrays and canonical scalar JSON values.
+
 Knight adapters bind both `knightBlock` and `knightUnblock`; the latter should
 map to the engine's public guard action with `{ active: false }`. Observing
 `actor.guarding` lets the governor hold that guard through the complete enemy
@@ -311,6 +366,46 @@ game, arbitrates through the selected class brain, dispatches through the same
 public command boundary as keyboard input, advances the normal game tick, and
 fails on rejected commands, stalls, or step limits. It never teleports or
 writes runtime state directly.
+
+Strict integrations use `createAICommandDispatchEnvelope()`. The envelope
+contains the complete frozen semantic proposal plus duplicated identity,
+Rules tick, observation digest, and a caller-defined deterministic Rules
+precondition SHA-256. That precondition may be a binding-scoped read-set digest
+instead of a digest of the entire Rules view. The envelope contains no
+precompiled command. `dispatchEnvelope()` first revalidates those values
+against current public state and only then invokes the supplied trusted binding
+compiler. The compiler's output is closed to `move`, `stop`, or registered
+`action` with `source: 'ai'`; illegal transfers, mutable references, non-JSON
+payloads, and extra fields fail before Solo dispatch.
+
+```ts
+import {
+  createAICommandDispatchEnvelope,
+  SoloCommandAdapter,
+} from '@arcade-cabinet/ai-yuka/solo';
+
+const adapter = new SoloCommandAdapter(runtime);
+if (selected) {
+  const pending = createAICommandDispatchEnvelope({
+    proposal: selected,
+    rulesTick,
+    expectedRulesRevisionSha256,
+  });
+  adapter.dispatchEnvelope(pending, {
+    rulesTick,
+    observationDigest,
+    rulesRevisionSha256: currentRulesRevisionSha256,
+  }, (proposal) => {
+    // Trusted catalogs resolve proposal.bindingId and observation entry ids.
+    return { type: 'action', entityId: 'smith', action: 'work', source: 'ai' };
+  });
+}
+void ordered; // retain the complete ranked set for deterministic receipts
+```
+
+The existing `commandFor()` and `dispatch()` intent APIs are unchanged for
+legacy integrations, including their explicit `transfer-map` support. They do
+not claim the strict proposal guarantees.
 
 ```ts
 import { ClassGovernor } from '@arcade-cabinet/ai-yuka';
@@ -396,3 +491,7 @@ pnpm verify       # all of the above plus packed fresh-consumer ESM/CJS/type smo
 Before publishing, direct dependencies and peers must be checked against their
 current compatible releases. A private package is not feature-complete while
 its underlying stack is knowingly behind latest.
+
+`SeededRandom.snapshot()` produces restorable xorshift32 state in the inclusive
+range `1..4294967295`. `restore(0)` rejects instead of silently substituting a
+different state, so accepted snapshots always restore byte-exactly.
