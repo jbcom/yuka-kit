@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Think } from 'yuka';
+import { SNAPSHOT_ARRAY_LIMIT } from '../persistence/snapshotValidation.js';
 import { SoloCommandAdapter, type SoloAICommand } from '../solo/adapter.js';
 import {
     RoutineAgent,
@@ -7,6 +8,7 @@ import {
     RoutineSlotNotFoundError,
     resolveRoutineTarget,
     resolveStateAwareRoutineTarget,
+    validateRoutineAgentSnapshot,
     type RoutineSchedule,
     type StateAwareRoutineSchedule,
 } from './RoutineAgent.js';
@@ -66,6 +68,140 @@ describe('RoutineAgent', () => {
         restored.restore(snapshot);
         expect(restored.decide(observation).intent).toMatchObject({ kind: 'wait' });
     });
+
+    it('validates an entire closed snapshot before replacing accepted activity state', () => {
+        const observation = {
+            day: 2,
+            minuteOfDay: 600,
+            mapId: 'town',
+            position: { x: 12, y: 0, z: 8 },
+        };
+        const agent = new RoutineAgent({ schedule });
+        const activity = agent.decide(observation);
+        agent.acknowledge(activity, true);
+        const before = agent.snapshot();
+
+        expect(() => agent.restore({
+            ...before,
+            completedActivities: [...before.completedActivities, 42],
+        })).toThrow(/must be strings/);
+        expect(agent.snapshot()).toEqual(before);
+        expect(agent.decide(observation).intent).toMatchObject({ kind: 'wait' });
+
+        const emptyKeyControl = new RoutineAgent({ schedule });
+        emptyKeyControl.restore(before);
+        expect(() => agent.restore({
+            ...before,
+            completedActivities: [''],
+        })).toThrow(/non-empty string/);
+        expect(agent.snapshot()).toEqual(before);
+        expect(agent.decide(observation)).toEqual(emptyKeyControl.decide(observation));
+
+        expect(() => validateRoutineAgentSnapshot({ ...before, injected: true }))
+            .toThrow(/unknown field: injected/);
+        expect(() => validateRoutineAgentSnapshot({
+            ...before,
+            completedActivities: [before.completedActivities[0], before.completedActivities[0]],
+        })).toThrow(/must be unique/);
+
+        const missingSchema: Record<string, unknown> = { ...before };
+        delete missingSchema.schema;
+        const originalSchema = Object.getOwnPropertyDescriptor(Object.prototype, 'schema');
+        let inheritedGetterCalls = 0;
+        try {
+            Object.defineProperty(Object.prototype, 'schema', {
+                configurable: true,
+                value: 'arcade-ai-yuka-routine',
+            });
+            expect(() => validateRoutineAgentSnapshot(missingSchema)).toThrow(/missing field: schema/);
+
+            Object.defineProperty(Object.prototype, 'schema', {
+                configurable: true,
+                get: () => {
+                    inheritedGetterCalls += 1;
+                    return 'arcade-ai-yuka-routine';
+                },
+            });
+            expect(() => validateRoutineAgentSnapshot(missingSchema)).toThrow(/missing field: schema/);
+            expect(inheritedGetterCalls).toBe(0);
+        } finally {
+            if (originalSchema) {
+                Object.defineProperty(Object.prototype, 'schema', originalSchema);
+            } else {
+                Reflect.deleteProperty(Object.prototype, 'schema');
+            }
+        }
+
+        const sparseActivities = Array<string>(1);
+        const originalZero = Object.getOwnPropertyDescriptor(Object.prototype, '0');
+        let inheritedElementGetterCalls = 0;
+        let inheritedElementError: unknown;
+        try {
+            Object.defineProperty(Object.prototype, '0', {
+                configurable: true,
+                get: () => {
+                    inheritedElementGetterCalls += 1;
+                    return 'poisoned-inherited-activity';
+                },
+            });
+            try {
+                validateRoutineAgentSnapshot({
+                    schema: 'arcade-ai-yuka-routine',
+                    version: 1,
+                    completedActivities: sparseActivities,
+                });
+            } catch (error) {
+                inheritedElementError = error;
+            }
+        } finally {
+            if (originalZero) {
+                Object.defineProperty(Object.prototype, '0', originalZero);
+            } else {
+                Reflect.deleteProperty(Object.prototype, '0');
+            }
+        }
+        expect(() => {
+            throw inheritedElementError;
+        }).toThrow(/activities\[0\].*enumerable data element/);
+        expect(inheritedElementGetterCalls).toBe(0);
+    });
+
+    it('rejects one-past completed activity persistence without corrupting the boundary', () => {
+        const completedActivities = Array.from(
+            { length: SNAPSHOT_ARRAY_LIMIT },
+            (_, index) => `activity-${String(index).padStart(6, '0')}`,
+        );
+        const boundary = {
+            schema: 'arcade-ai-yuka-routine' as const,
+            version: 1 as const,
+            completedActivities,
+        };
+        expect(validateRoutineAgentSnapshot(boundary)).toEqual(boundary);
+
+        const agent = new RoutineAgent({ schedule });
+        agent.restore(boundary);
+        const before = agent.snapshot();
+        expect(before.completedActivities).toHaveLength(SNAPSHOT_ARRAY_LIMIT);
+        const decision = agent.decide({
+            day: SNAPSHOT_ARRAY_LIMIT,
+            minuteOfDay: 600,
+            mapId: 'town',
+            position: { x: 12, y: 0, z: 8 },
+        });
+        expect(() => agent.acknowledge(decision, true))
+            .toThrow(/completed activity persistence capacity/);
+        expect(agent.snapshot()).toEqual(before);
+        expect(() => agent.acknowledge({
+            ...decision,
+            activityKey: completedActivities[0],
+        }, true)).not.toThrow();
+        expect(validateRoutineAgentSnapshot(agent.snapshot())).toEqual(before);
+
+        expect(() => validateRoutineAgentSnapshot({
+            ...boundary,
+            completedActivities: [...completedActivities, 'one-past-capacity'],
+        })).toThrow(/maximum supported length/);
+    }, 30_000);
 
     it('preserves ordered clock selection and raw map transfers by default', () => {
         const overlapping: RoutineSchedule = {

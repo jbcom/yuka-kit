@@ -1,5 +1,9 @@
 import { StateMachine, type State, type Vehicle } from 'yuka';
 import type { AIVehicle } from '../core/types.js';
+import {
+    requireNonEmptyString,
+    validateClosedSnapshotRecord,
+} from '../persistence/snapshotValidation.js';
 
 export interface FsmStateSnapshot {
     schema: 'arcade-ai-yuka-fsm';
@@ -46,13 +50,29 @@ export function snapshotFsmState(fsm: StateMachine): FsmStateSnapshot {
     return { schema: 'arcade-ai-yuka-fsm', version: 1, state };
 }
 
-/** Restore a validated registered state id into an existing Yuka FSM. */
-export function restoreFsmState(fsm: StateMachine, snapshot: FsmStateSnapshot): void {
-    if (snapshot.schema !== 'arcade-ai-yuka-fsm' || snapshot.version !== 1) {
+/** Validate and normalize an untrusted JSON FSM snapshot without mutating an FSM. */
+export function validateFsmStateSnapshot(snapshot: unknown): FsmStateSnapshot {
+    const record = validateClosedSnapshotRecord(
+        snapshot,
+        ['schema', 'version', 'state'],
+        [],
+        'Yuka FSM snapshot',
+    );
+    if (record.schema !== 'arcade-ai-yuka-fsm' || record.version !== 1) {
         throw new TypeError('Unsupported Yuka FSM snapshot');
     }
-    if (!fsm.states.has(snapshot.state)) {
-        throw new TypeError(`FSM snapshot references unknown state: ${snapshot.state}`);
+    return {
+        schema: 'arcade-ai-yuka-fsm',
+        version: 1,
+        state: requireNonEmptyString(record.state, 'Yuka FSM snapshot state'),
+    };
+}
+
+/** Restore a validated registered state id into an existing Yuka FSM. */
+export function restoreFsmState(fsm: StateMachine, snapshot: unknown): void {
+    const validated = validateFsmStateSnapshot(snapshot);
+    if (!fsm.states.has(validated.state)) {
+        throw new TypeError(`FSM snapshot references unknown state: ${validated.state}`);
     }
-    if (!fsm.in(snapshot.state)) fsm.changeTo(snapshot.state);
+    if (!fsm.in(validated.state)) fsm.changeTo(validated.state);
 }

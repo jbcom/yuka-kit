@@ -1,4 +1,4 @@
-export { EncounterDirector } from './EncounterDirector.js';
+export { EncounterDirector, validateEncounterDirectorSnapshot } from './EncounterDirector.js';
 export { generateFormation } from './formations.js';
 export type {
     EncounterDecision,

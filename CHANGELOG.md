@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.19.0
+
+- Export closed validators for package-owned FSM, routine-agent, and encounter-
+  director snapshots so games can validate untrusted save JSON without
+  duplicating package schemas.
+- Validate complete snapshots before mutating live Yuka state, including late
+  encounter budget records, and reject unknown fields, malformed tuples,
+  ambiguous duplicate records, impossible counters, and histories or partial
+  legacy budgets that cannot fit their claimed encounter timeline.
+- Bound every producer-owned persistence collection to the validator's 100,000-
+  entry ceiling, with bounded history retention and explicit errors for
+  lossless collections instead of unrestorable output.
+- Preserve the exact pre-restore state and next deterministic decision whenever
+  validation fails.
+- Pin the complete Node 24 test toolchain to current Vite 8.2.0 rather than
+  retaining an older compatible transitive resolution through Vitest.
+
 ## 0.18.0
 
 - Add a closed, immutable semantic proposal protocol with canonical target

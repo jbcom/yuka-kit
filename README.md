@@ -12,9 +12,10 @@ systems needed by RPGJS Solo games, `0.3.0` added structured combat bindings,
 `0.4.0` added authoritative command-availability observations, `0.7.0`
 added versioned routine and combat-FSM state, `0.8.0` added actionable
 Yuka-arbitrated combat tactics, `0.14.0` makes Mage pack defense react to every
-nearby telegraph, and `0.17.0` adds strict authored-state routine selection and
-public cross-map action intents, and `0.18.0` adds the strict deterministic
-proposal and final-dispatch boundary. All releases
+nearby telegraph; `0.17.0` adds strict authored-state routine selection and
+public cross-map action intents; `0.18.0` adds the strict deterministic
+proposal and final-dispatch boundary; and `0.19.0` adds closed, atomic
+persistence validation for package-owned AI snapshots. All releases
 target Node.js 24 LTS and pin the current underlying Yuka release.
 
 Extracted from **bok** (winner of the ai-yuka tournament — the deepest yuka
@@ -78,6 +79,8 @@ current state's registration id.
 `snapshotFsmState()` / `restoreFsmState()` persist only that registered state
 id, keeping Yuka class instances out of save data while resuming patrol,
 chase, attack, or dead behavior through the existing machine.
+`validateFsmStateSnapshot()` validates untrusted JSON against the package's
+closed snapshot schema before any machine transition.
 
 Time-based states read frame dt from the vehicle. `stepAI()` writes it and
 updates every managed combat FSM before steering; custom loops can call
@@ -174,6 +177,14 @@ Yuka `Think`/`GoalEvaluator` weighted arbitration. A successful decision
 returns a spawn plan; the game remains responsible for creating its authored
 entities.
 
+`validateEncounterDirectorSnapshot()` validates the entire closed encounter
+snapshot—including PRNG state, history, cooldown records, and per-map budgets—
+before `EncounterDirector.restore()` changes any live director state.
+Retained history is capped at 100,000 entries. At the same persistence limit,
+`consider()` rejects a probe that could introduce a new encounter id or a new
+map-budget record; existing ids and records remain usable and every emitted
+snapshot remains restorable.
+
 `generateFormation()` turns that plan into ring, ambush, line, wedge, or
 scatter positions while enforcing injected walkability, visibility, and range
 constraints. This keeps map/navmesh ownership in the game.
@@ -186,6 +197,11 @@ acknowledgement happens only after the command is accepted, preventing an NPC
 from silently skipping a failed interaction.
 `RoutineAgent.snapshot()` / `restore()` retain those accepted daily activity
 keys, so loading a save does not repeat already-completed work.
+`validateRoutineAgentSnapshot()` validates the complete closed schema before
+`restore()` replaces any accepted-activity state.
+Accepted activity keys are capped at 100,000. A duplicate acknowledgement stays
+idempotent, while acknowledging a new key at capacity throws until the host
+releases obsolete daily keys with `resetDay()`.
 
 ```ts
 const smith = new RoutineAgent({
