@@ -31,6 +31,8 @@ try {
     'CHANGELOG.md',
     'dist/esm/index.js',
     'dist/esm/index.d.ts',
+    'dist/esm/proposals/identity.d.ts',
+    'dist/esm/solo/index.d.ts',
     'dist/cjs/index.js',
   ]) {
     assert.equal(packedFiles.has(required), true, `packed artifact is missing ${required}`);
@@ -60,11 +62,18 @@ try {
   }, null, 2));
   await writeFile(join(consumerDirectory, 'consumer.ts'), `
 import {
+  deriveDeterministicIdentity,
   RoutineAgent,
   resolveStateAwareRoutineTarget,
+  selectSemanticCommandProposal,
+  SEMANTIC_COMMAND_PROPOSAL_SCHEMA,
   type RoutineSchedule,
   type StateAwareRoutineSchedule,
 } from '@arcade-cabinet/ai-yuka';
+import {
+  createAICommandDispatchEnvelope,
+  SoloCommandAdapter,
+} from '@arcade-cabinet/ai-yuka/solo';
 
 const legacy: RoutineSchedule = {
   home: { mapId: 'home', position: { x: 0, y: 0, z: 0 } },
@@ -104,23 +113,58 @@ new RoutineAgent({
     },
   }),
 });
+
+const observationDigest = 'ab'.repeat(32);
+const rulesRevisionSha256 = 'cd'.repeat(32);
+const streamId = deriveDeterministicIdentity('stream', ['consumer', 'npc', 1]);
+const proposalId = deriveDeterministicIdentity('proposal', [streamId, 1, 'binding:wait']);
+const selection = selectSemanticCommandProposal([{
+  schema: SEMANTIC_COMMAND_PROPOSAL_SCHEMA,
+  streamId,
+  decisionOrdinal: 1,
+  observationDigest,
+  proposalId,
+  goalId: 'goal:wait',
+  goalOrdinal: 0,
+  utilityMicros: 1,
+  bindingId: 'binding:wait',
+  bindingOrdinal: 0,
+  proposalOrdinal: 0,
+  targets: [],
+  reasonCode: 'WAIT',
+}]);
+if (selection.selected) {
+  const envelope = createAICommandDispatchEnvelope({
+    proposal: selection.selected,
+    rulesTick: 5,
+    expectedRulesRevisionSha256: rulesRevisionSha256,
+  });
+  const adapter = new SoloCommandAdapter({ dispatch: () => ({ accepted: true, tick: 5 }) });
+  adapter.dispatchEnvelope(envelope, {
+    rulesTick: 5,
+    observationDigest,
+    rulesRevisionSha256,
+  }, () => ({ type: 'stop', entityId: 'npc', source: 'ai' }));
+}
 void legacyMinuteArithmetic;
 `);
   run(join(consumerDirectory, 'node_modules/.bin/tsc'), ['--project', 'tsconfig.json']);
 
   await writeFile(join(consumerDirectory, 'esm.mjs'), `
-import { resolveStateAwareRoutineTarget } from '@arcade-cabinet/ai-yuka';
+import { deriveDeterministicIdentity, resolveStateAwareRoutineTarget } from '@arcade-cabinet/ai-yuka';
 const target = resolveStateAwareRoutineTarget({
   entries: [{ id: 'work', mapId: 'town', position: { x: 1, y: 0, z: 1 }, when: { phaseId: 'work' } }],
 }, { day: 1, minuteOfDay: 1, mapId: 'home', position: { x: 0, y: 0, z: 0 }, phaseId: 'work' });
 if (target.id !== 'work') throw new Error('ESM state-aware export failed');
+if (!deriveDeterministicIdentity('receipt', ['esm', 1]).startsWith('receipt:')) throw new Error('ESM identity export failed');
 `);
   await writeFile(join(consumerDirectory, 'cjs.cjs'), `
-const { resolveStateAwareRoutineTarget } = require('@arcade-cabinet/ai-yuka');
+const { deriveDeterministicIdentity, resolveStateAwareRoutineTarget } = require('@arcade-cabinet/ai-yuka');
 const target = resolveStateAwareRoutineTarget({
   entries: [{ id: 'work', mapId: 'town', position: { x: 1, y: 0, z: 1 }, when: { phaseId: 'work' } }],
 }, { day: 1, minuteOfDay: 1, mapId: 'home', position: { x: 0, y: 0, z: 0 }, phaseId: 'work' });
 if (target.id !== 'work') throw new Error('CJS state-aware export failed');
+if (!deriveDeterministicIdentity('receipt', ['cjs', 1]).startsWith('receipt:')) throw new Error('CJS identity export failed');
 `);
   run(process.execPath, ['esm.mjs']);
   run(process.execPath, ['cjs.cjs']);

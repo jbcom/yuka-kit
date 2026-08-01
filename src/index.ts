@@ -94,5 +94,27 @@ export type {
 } from './governors/index.js';
 export { SeededRandom } from './random/index.js';
 export type { AgentIntent } from './intents.js';
+// strict deterministic proposal protocol
+export {
+    compareNormalizedUtf8,
+    compareSemanticCommandProposals,
+    canonicalDeterministicIdentityTuple,
+    DETERMINISTIC_IDENTITY_SCHEMA,
+    deriveDeterministicIdentity,
+    rankSemanticCommandProposals,
+    SEMANTIC_COMMAND_PROPOSAL_SCHEMA,
+    selectSemanticCommandProposal,
+    SemanticProposalValidationError,
+    validateDeterministicIdentity,
+    validateSemanticCommandProposal,
+} from './proposals/index.js';
+export type {
+    SemanticCommandProposal,
+    SemanticProposalSelection,
+    SemanticProposalTarget,
+    SemanticProposalValidationCode,
+    DeterministicIdentityKind,
+    DeterministicIdentityValue,
+} from './proposals/index.js';
 // command-neutral combat tactics
 export * from './combat/index.js';

@@ -14,9 +14,13 @@ for (const entry of [esm, cjs]) {
   assert.equal(typeof entry.resolveStateAwareRoutineTarget, 'function');
   assert.equal(typeof entry.RoutineSlotConflictError, 'function');
   assert.equal(typeof entry.RoutineSlotNotFoundError, 'function');
+  assert.equal(typeof entry.deriveDeterministicIdentity, 'function');
+  assert.equal(typeof entry.selectSemanticCommandProposal, 'function');
 }
 
 for (const entry of [soloEsm, soloCjs]) {
   assert.equal(typeof entry.SoloCommandAdapter, 'function');
   assert.equal(typeof entry.runGovernedPlaythrough, 'function');
+  assert.equal(typeof entry.createAICommandDispatchEnvelope, 'function');
+  assert.equal(typeof entry.validateStrictSoloAICommand, 'function');
 }
