@@ -1,6 +1,6 @@
 {
   "name": "@arcade-cabinet/ai-yuka",
-  "version": "0.19.0",
+  "version": "0.19.1",
   "description": "Shared Yuka AI toolkit with deterministic encounters, NPC routines, class governors, and RPGJS Solo command-driven playthroughs.",
   "type": "module",
   "license": "UNLICENSED",
@@ -12,7 +12,7 @@
   "engines": {
     "node": ">=24"
   },
-  "packageManager": "pnpm@11.18.0",
+  "packageManager": "pnpm@11.21.0",
   "publishConfig": {
     "access": "restricted",
     "registry": "https://redacted-private-registry.example/api/packages/arcade-cabinet/npm/"
@@ -52,11 +52,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:dependency-currency-bootstrap": "node --test scripts/dependency-currency-bootstrap/oracle.tests.mjs",
+    "test:release-workflows": "node --test scripts/release-workflows.tests.mjs",
+    "verify:dependency-currency": "node scripts/dependency-currency-bootstrap/verify.mjs",
     "smoke:consumer": "node scripts/smoke-fresh-consumer.mjs",
-    "verify": "pnpm run typecheck && pnpm run test && pnpm run build && node scripts/smoke-package.mjs && pnpm run smoke:consumer"
+    "verify": "pnpm run verify:dependency-currency && pnpm run test:dependency-currency-bootstrap && pnpm run test:release-workflows && pnpm run typecheck && pnpm run test && pnpm run build && node scripts/smoke-package.mjs && pnpm run smoke:consumer"
   },
   "dependencies": {
-    "@noble/hashes": "2.2.0"
+    "@noble/hashes": "2.3.0"
   },
   "peerDependencies": {
     "koota": "0.6.6",
@@ -69,10 +72,10 @@
   },
   "devDependencies": {
     "@types/node": "24.13.3",
-    "esbuild": "0.28.1",
+    "esbuild": "0.28.2",
     "koota": "0.6.6",
     "typescript": "7.0.2",
-    "vite": "8.2.0",
+    "vite": "8.2.1",
     "vitest": "4.1.10",
     "yuka": "0.7.8"
   }

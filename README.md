@@ -15,8 +15,12 @@ Yuka-arbitrated combat tactics, `0.14.0` makes Mage pack defense react to every
 nearby telegraph; `0.17.0` adds strict authored-state routine selection and
 public cross-map action intents; `0.18.0` adds the strict deterministic
 proposal and final-dispatch boundary; and `0.19.0` adds closed, atomic
-persistence validation for package-owned AI snapshots. All releases
-target Node.js 24 LTS and pin the current underlying Yuka release.
+persistence validation for package-owned AI snapshots. Patch release `0.19.1`
+aligns the runtime dependency and complete release toolchain to their current
+Node 24-compatible versions and adds a fail-closed immutable release path. All
+releases retain the public Node.js `>=24` compatibility contract and pin the
+current underlying Yuka release. Repository verification and publication use
+the exact current Node.js 24 LTS toolchain recorded in `.nvmrc` and CI.
 
 Extracted from **bok** (winner of the ai-yuka tournament — the deepest yuka
 integration in the fleet and the only repo that had already solved yuka-objects-

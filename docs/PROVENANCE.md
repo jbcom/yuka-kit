@@ -27,17 +27,33 @@ Future releases must preserve that provenance, validate their new surfaces in
 this source repository, and publish only after every direct underlying package
 is aligned to its current compatible release.
 
-## 0.19.0 dependency currency
+## 0.19.1 dependency currency
 
-Checked against the public npm registry on 2026-08-01 before packaging:
+Checked against the public npm registry on 2026-08-09 for the release
+candidate:
 
-- `@noble/hashes@2.2.0` is the current release and supports Node.js
+- `@noble/hashes@2.3.0` is the current release and supports Node.js
   `>=20.19.0`; it provides the audited browser/Node SHA-256 implementation used
   by deterministic identity helpers.
-- `yuka@0.7.8`, `koota@0.6.6`, `esbuild@0.28.1`, `typescript@7.0.2`,
-  `vite@8.2.0`, `vitest@4.1.10`, and `pnpm@11.18.0` are their current
+- `yuka@0.7.8`, `koota@0.6.6`, `esbuild@0.28.2`, `typescript@7.0.2`,
+  `vite@8.2.1`, `vitest@4.1.10`, and `pnpm@11.21.0` are their current
   releases. Vite is pinned directly so Vitest's compatible transitive range
   cannot leave the verified lockfile behind the release gate.
 - `@types/node@24.13.3` is the current Node 24 declaration line. The newer
   package major follows Node 26 and is intentionally outside this Node 24 LTS
   package boundary.
+- Node.js 24.19.0 is the current Node 24 LTS release and is pinned as the
+  repository execution toolchain in `.nvmrc`, CI, and publication. The package
+  preserves its prior public `node >=24` compatibility declaration; the exact
+  execution pin is release reproducibility policy, not a narrower consumer
+  runtime claim.
+
+The live bootstrap gate recursively checks all public production dependencies,
+required peers, and optional peers installed by this repository. For this
+release its closed runtime set is `@noble/hashes@2.3.0`, required peer
+`yuka@0.7.8`, and installed optional peer `koota@0.6.6`. Noble and Yuka have no
+further runtime edges. Koota declares optional React peers, but neither is
+installed here, so they are excluded by the documented closure rule. The
+repository-local bootstrap is temporary and must be replaced by the exact
+released `@arcade-cabinet/build-preset` dependency-current CLI before this
+candidate merges or publishes.
