@@ -12,13 +12,13 @@ jobs:
   enable-auto-merge:
     # This workflow uses trusted default-branch code and deliberately never
     # checks out or executes pull-request content. Release Please creates the
-    # release PR; Dependabot creates the grouped non-major dependency PR.
+    # release PR; Dependabot creates the npm grouped non-major dependency PR.
     if: >-
       (github.event.pull_request.head.repo.full_name == github.repository &&
        startsWith(github.event.pull_request.head.ref, 'release-please--')) ||
-      (github.event.pull_request.user.login == 'dependabot[bot]' &&
+      (github.event.pull_request.user.login == 'app/dependabot' &&
        github.event.pull_request.head.repo.full_name == github.repository &&
-       startsWith(github.event.pull_request.title, 'Bump the non-major-dependencies group'))
+       startsWith(github.event.pull_request.head.ref, 'dependabot/npm_and_yarn/non-major-dependencies-'))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

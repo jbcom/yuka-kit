@@ -15,16 +15,16 @@ concurrency:
 jobs:
   verify:
     # Release Please PRs only package already-merged commits. Dependabot's
-    # grouped non-major PRs are similarly narrow, lockfile-backed updates.
+    # npm grouped non-major PRs are similarly narrow, lockfile-backed updates.
     # Keep a successful workflow result instead of path-filtering the workflow:
     # required workflows filtered out at trigger time remain pending on GitHub.
     if: >-
       github.event_name != 'pull_request' ||
       (!(github.event.pull_request.head.repo.full_name == github.repository &&
          startsWith(github.event.pull_request.head.ref, 'release-please--')) &&
-       !(github.event.pull_request.user.login == 'dependabot[bot]' &&
+       !(github.event.pull_request.user.login == 'app/dependabot' &&
          github.event.pull_request.head.repo.full_name == github.repository &&
-         startsWith(github.event.pull_request.title, 'Bump the non-major-dependencies group')))
+         startsWith(github.event.pull_request.head.ref, 'dependabot/npm_and_yarn/non-major-dependencies-')))
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
