@@ -27,7 +27,8 @@ tag scheme.
 4. The workflow's `publish` job (gated on `release-please`'s `released`
    output) checks out that exact tag, installs with a frozen lockfile, runs
    `pnpm verify`, and runs `pnpm publish --access public --provenance
-   --no-git-checks`. Authentication is `NPM_TOKEN` (a repository secret) until
+   --no-git-checks`. It then checks the exact version anonymously through the
+   public npm registry, retrying briefly for registry propagation. Authentication is `NPM_TOKEN` (a repository secret) until
    npm Trusted Publishing is configured for this repository, at which point
    the workflow's `id-token: write` permission is sufficient on its own and
    the token requirement drops.
