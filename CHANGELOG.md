@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.20.2](https://github.com/jbcom/yuka-kit/compare/0.20.1...0.20.2) (2026-08-24)
+
+
+### Bug Fixes
+
+* run the registry verifier shell safely ([2988ad6](https://github.com/jbcom/yuka-kit/commit/2988ad6a154f25522fb9f01daffb4aeecc24640f))
+* run the registry verifier shell safely ([6ea56dc](https://github.com/jbcom/yuka-kit/commit/6ea56dce4dcfae0e42d2f04d7c4ce58457a1f3c8))
+
 ## [0.20.1](https://github.com/jbcom/yuka-kit/compare/0.20.0...0.20.1) (2026-08-24)
 
 
