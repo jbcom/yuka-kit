@@ -27,6 +27,11 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          # The organization PAT is deliberately used here rather than the
+          # ephemeral GITHUB_TOKEN: GitHub suppresses workflow triggers for
+          # pull requests created with GITHUB_TOKEN, leaving a release PR
+          # without the checks that protect main.
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
 
   publish:
     needs: release-please
