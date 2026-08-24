@@ -72,6 +72,7 @@
   },
   "devDependencies": {
     "@types/node": "24.13.3",
+    "@vitest/coverage-v8": "4.1.10",
     "esbuild": "0.28.2",
     "koota": "0.6.6",
     "typescript": "7.0.2",
