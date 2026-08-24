@@ -35,6 +35,9 @@ try {
     'dist/esm/proposals/identity.d.ts',
     'dist/esm/solo/index.d.ts',
     'dist/cjs/index.js',
+    'dist/cjs/index.d.cts',
+    'dist/cjs/koota/index.d.cts',
+    'dist/cjs/solo/index.d.cts',
   ]) {
     assert.equal(packedFiles.has(required), true, `packed artifact is missing ${required}`);
   }
