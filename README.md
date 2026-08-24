@@ -6,6 +6,11 @@ browser and Node games: steering helpers, combat FSM states, goal-driven
 vision perception, deterministic encounter spawning, authored NPC routines,
 class-specific playthrough governors, and optional Koota/RPGJS Solo bridges.
 
+**Documentation:** [jonbogaty.com/yuka-kit](https://jonbogaty.com/yuka-kit/)
+for guided integration, API catalogue, persistence rules, and the agentic
+command boundary. The site also publishes `llms.txt` and `llms-full.txt` from
+the same reviewed documentation graph.
+
 This repository is the source of truth for the package. Version
 `0.1.0` restored the originally published artifact; `0.2.0` added the production
 systems needed by RPGJS Solo games, `0.3.0` added structured combat bindings,
