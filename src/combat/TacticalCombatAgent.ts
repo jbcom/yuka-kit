@@ -99,7 +99,7 @@ class TacticalEvaluator extends GoalEvaluator {
 }
 
 /**
- * Yuka-arbitrated combat tactics extracted from the fleet's authored enemy
+ * Yuka-arbitrated combat tactics extracted from production-authored enemy
  * loops. The package decides behavior and returns a command-neutral intent;
  * games retain their own actions, damage, content, and authoritative runtime.
  */

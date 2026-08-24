@@ -1,8 +1,8 @@
 /**
  * Ambient type declarations for yuka (which ships no TypeScript types).
  *
- * Fleet-superset merged from the declarations bok, goats-in-hell and
- * pond-warfare each hand-wrote: covers the entity/steering/FSM/goal/path
+ * Merged from independently hand-written declarations across several
+ * consumers: covers the entity/steering/FSM/goal/path
  * APIs this package uses. Copied into dist/ and referenced from the entry
  * declarations at build time (scripts/postbuild-types.mjs) so consumers get
  * yuka types transitively.

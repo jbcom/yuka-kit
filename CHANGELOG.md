@@ -91,8 +91,8 @@
 - Let Mage governors ward against any nearby startup telegraph in a pack,
   instead of ignoring an imminent attack whenever a different enemy happens
   to be the nearest target.
-- Add reusable 2D AABB line-of-sight helpers extracted from the fleet-proven
-  Quest enemy governor, so ranged agents can reposition around authoritative
+- Add reusable 2D AABB line-of-sight helpers extracted from a production-proven
+  enemy governor, so ranged agents can reposition around authoritative
   Solo collision instead of firing through walls.
 
 ## 0.13.0
@@ -130,7 +130,7 @@
 
 - Add Yuka-arbitrated `TacticalCombatAgent` intents for melee, ranged, charge, and ambush enemies.
 - Add `BossTacticalAgent` to turn the shared phase-aware `BossBrain` into actionable movement, attack, barrage, and summon intents.
-- Base tactical distances and authored behavior on the fleet-proven enemy loops from A Good Old-Fashioned Adventure while keeping combat effects game-owned.
+- Base tactical distances and authored behavior on production-proven enemy loops while keeping combat effects game-owned.
 
 ## 0.7.0
 
@@ -185,4 +185,4 @@
 
 ## 0.1.0
 
-- Restore and verify the original fleet-tournament package baseline.
+- Restore and verify the original extracted package baseline.

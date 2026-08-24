@@ -13,8 +13,8 @@ published declaration files, then made strict-TypeScript clean. The public
 root declaration barrel is byte-for-byte compatible with 0.1.0, and the
 package verifier exercises ESM and CommonJS entry points.
 
-The implementation was originally extracted through the fleet tournament in
-`arcade-cabinet/meta/tournaments/ai-yuka.md`:
+The implementation was originally extracted from the strongest production
+yuka integration available at the time:
 
 - `bok`: entity management, combat FSMs, Yuka goal brains, boss phases, and
   the Koota bridge

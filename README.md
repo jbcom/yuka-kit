@@ -22,9 +22,8 @@ releases retain the public Node.js `>=24` compatibility contract and pin the
 current underlying Yuka release. Repository verification and publication use
 the exact current Node.js 24 LTS toolchain recorded in `.nvmrc` and CI.
 
-Extracted from **bok** (winner of the ai-yuka tournament — the deepest yuka
-integration in the fleet and the only repo that had already solved yuka-objects-
-inside-koota-traits), absorbing:
+Extracted from the deepest production yuka integration available — the only
+source that had already solved yuka-objects-inside-koota-traits — absorbing:
 
 - **pond-warfare** — flocking/separation/obstacle-avoidance steering helpers
 - **goats-in-hell** — binary-heap grid A\* + the goal/evaluator vocabulary
@@ -116,11 +115,11 @@ updates every managed combat FSM before steering; custom loops can call
   phase, winning evaluator tags `_activeBehavior`
   (`circle-strafe` / `aggressive-chase` / `retreat-and-summon` /
   `ranged-barrage` / `enrage`). `BossPhaseConfig` is a structural subset of the
-  fleet's boss content schemas.
+  package's boss content schemas.
 
 ### presets
 
-`AI_TYPE_PRESETS` maps the fleet archetypes
+`AI_TYPE_PRESETS` maps the standard archetypes
 (`melee`/`ranged`/`pack`/`ambush`/`boss`/`passive`) to evaluator bundles;
 `createBrainForType(entity, aiType, bossPhases?)` builds the brain (boss +
 phases ⇒ full `BossBrain`). Games keep their own content-id → AIType lookup
