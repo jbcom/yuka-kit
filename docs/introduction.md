@@ -13,7 +13,20 @@ Koota and RPGJS Solo integrations.
 
 The package is deliberately game-engine agnostic. A game owns its entities,
 physics, map representation, damage, rendering, and content. Yuka Kit owns
-reusable decision primitives and explicit contracts around them.
+reusable decision primitives and explicit contracts around them. It does not
+own a game loop, mutate a global singleton, execute player-facing actions, or
+serialize Yuka object graphs.
+
+## Choose a path
+
+- Need an enemy to steer, see, pathfind, or change combat states? Start with
+  [Building game AI](../game-ai/).
+- Need reproducible encounter rolls, schedules, or save data? Read
+  [Persistence and determinism](../persistence/).
+- Need an AI decision to cross a trusted command boundary? Use the
+  [agent integration contract](../agent-integration/).
+- Looking for an export or an integration entry point? Go to the
+  [API catalogue](../api-reference/).
 
 ## What is included
 
@@ -24,4 +37,7 @@ reusable decision primitives and explicit contracts around them.
 - Closed-schema snapshot validation before restoration of package state.
 - Optional `koota` and RPGJS Solo bridge entry points.
 
-For the full exported API, start from the package [README](https://github.com/jbcom/yuka-kit#modules), which remains the concise package reference.
+The root entry point is ECS-agnostic. `@jbdevprimary/yuka-kit/koota` and
+`@jbdevprimary/yuka-kit/solo` are optional, separately imported entry points,
+so games that do not use those frameworks do not pull them into their own
+integration path.

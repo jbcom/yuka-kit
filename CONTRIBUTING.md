@@ -7,7 +7,7 @@ Thanks for taking the time to contribute.
 ```sh
 corepack enable
 pnpm install
-pnpm verify   # lint, typecheck, test, build — the same gate CI runs
+pnpm verify   # dependency checks, workflow checks, typecheck, coverage, build, package and docs smoke tests
 ```
 
 Node and pnpm versions are pinned in `package.json` under `engines` and
@@ -20,8 +20,8 @@ version matches CI.
 2. Write the test first. A bug fix should come with a test that fails without it.
 3. Run `pnpm verify`. A change is not ready while any part of that is red.
 4. Commit with [Conventional Commits](https://www.conventionalcommits.org):
-   `fix:`, `feat:`, `docs:`, `refactor:`, `test:`, `chore:`. This is enforced by
-   commitlint, and it is what drives the changelog and the next version number.
+   `fix:`, `feat:`, `docs:`, `refactor:`, `test:`, `chore:`. Release Please
+   reads these messages to create the changelog and determine the next version.
 5. Open a pull request describing what changed and why.
 
 ## What gets reviewed
@@ -31,6 +31,8 @@ version matches CI.
   `BREAKING CHANGE:` footer.
 - Are the types right for consumers? CI runs `publint` and
   `arethetypeswrong` because broken types only surface at integration time.
+- Does the public documentation match the changed contract? `pnpm verify`
+  rebuilds the Sourcey site and its `llms.txt` exports.
 
 ## Releases
 

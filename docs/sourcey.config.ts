@@ -9,7 +9,10 @@ export default defineConfig({
   editBasePath: 'docs',
   prettyUrls: 'slash',
   theme: {
-    preset: 'minimal',
+    // The default preset keeps the section map and in-page table of contents
+    // visible. This is materially easier to use than a single long column for
+    // a library with several independent integration surfaces.
+    preset: 'default',
     colors: {
       primary: '#1f6feb',
       light: '#58a6ff',
@@ -23,8 +26,13 @@ export default defineConfig({
         slug: '',
         source: markdown({
           groups: [
-            { group: 'Getting started', pages: ['introduction', 'installation'] },
-            { group: 'Guides', pages: ['game-ai', 'persistence', 'guides/releasing'] },
+            { group: 'Getting started', pages: ['introduction', 'installation', 'architecture'] },
+            {
+              group: 'Build with Yuka Kit',
+              pages: ['game-ai', 'persistence', 'agent-integration'],
+            },
+            { group: 'Reference', pages: ['api-reference'] },
+            { group: 'Maintainers', pages: ['guides/releasing'] },
           ],
         }),
       },
