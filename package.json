@@ -82,5 +82,15 @@
   "bugs": {
     "url": "https://github.com/jbcom/yuka-kit/issues"
   },
-  "homepage": "https://github.com/jbcom/yuka-kit#readme"
+  "homepage": "https://github.com/jbcom/yuka-kit#readme",
+  "author": "Jon Bogaty <jon@jonbogaty.com>",
+  "keywords": [
+    "yuka",
+    "ai",
+    "npc",
+    "steering-behaviors",
+    "game-ai",
+    "rpgjs",
+    "deterministic"
+  ]
 }
