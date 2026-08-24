@@ -1,31 +1,25 @@
 # Source provenance
 
 This repository restores source ownership for the already-published
-`@jbcom/yuka-kit@0.1.0` package before extending it. The published
+`@jbdevprimary/yuka-kit@0.1.0` package before extending it. The published
 artifact remains the behavioral baseline:
 
 - SHA-1: `5c65d65e4c20418e11ebfc085241bd2daf0fd051`
 - integrity: `sha512-j5w8esauD82xMULuR/+bFg4DVlx8xvYVKICLF0+bKz6wlTR/wicfDpQ4yXGwj/EQIEFJw/0P8IRxRJPJ66eC4A==`
-- registry: the private `arcade-cabinet` Gitea npm scope
 
 The runtime modules were restored from that exact ESM distribution and the
 published declaration files, then made strict-TypeScript clean. The public
 root declaration barrel is byte-for-byte compatible with 0.1.0, and the
 package verifier exercises ESM and CommonJS entry points.
 
-The implementation was originally extracted from the strongest production
-yuka integration available at the time:
+The implementation was originally extracted and generalized from several
+production yuka integrations, then rewritten as a standalone, game-agnostic
+toolkit: entity management, combat FSMs, Yuka goal brains, boss phases, a
+Koota bridge, reusable steering groups, grid A-star pathfinding, evaluator
+vocabulary, a perception-to-FSM seam, and waypoint path following.
 
-- `bok`: entity management, combat FSMs, Yuka goal brains, boss phases, and
-  the Koota bridge
-- `pond-warfare`: reusable steering groups
-- `goats-in-hell`: grid A-star and evaluator vocabulary
-- `aethermoor`: perception-to-FSM seam
-- `voxel-realms`: waypoint path following
-
-Future releases must preserve that provenance, validate their new surfaces in
-this source repository, and publish only after every direct underlying package
-is aligned to its current compatible release.
+Future releases must preserve that provenance and validate their new surfaces
+in this source repository before publication.
 
 ## 0.19.1 dependency currency
 
@@ -48,12 +42,10 @@ candidate:
   execution pin is release reproducibility policy, not a narrower consumer
   runtime claim.
 
-The live bootstrap gate recursively checks all public production dependencies,
-required peers, and optional peers installed by this repository. For this
-release its closed runtime set is `@noble/hashes@2.3.0`, required peer
-`yuka@0.7.8`, and installed optional peer `koota@0.6.6`. Noble and Yuka have no
-further runtime edges. Koota declares optional React peers, but neither is
-installed here, so they are excluded by the documented closure rule. The
-repository-local bootstrap is temporary and must be replaced by the exact
-released `@arcade-cabinet/build-preset` dependency-current CLI before this
-candidate merges or publishes.
+The dependency-currency bootstrap recursively checks all public production
+dependencies, required peers, and optional peers installed by this repository.
+For this release its closed runtime set is `@noble/hashes@2.3.0`, required
+peer `yuka@0.7.8`, and installed optional peer `koota@0.6.6`. Noble and Yuka
+have no further runtime edges. Koota declares optional React peers, but
+neither is installed here, so they are excluded by the documented closure
+rule.

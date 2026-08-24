@@ -8,15 +8,11 @@
 - Align the release toolchain to Node.js 24.19.0 LTS, pnpm 11.21.0, esbuild
   0.28.2, and Vite 8.2.1 without crossing the package's Node 24 boundary.
 - Add a fail-closed live dependency-currency bootstrap for production
-  dependencies, required peers, and installed optional peers. This isolated
-  oracle is scheduled to be replaced by the shared
-  `@arcade-cabinet/build-preset` CLI before merge or publication.
-- Add an immutable tagged-package workflow that proves the annotated source
-  tag object, exact authenticated live `main`, and both packed digests;
-  publishes with a trapped mode-600 temporary credential after unsetting both
-  source token environments; rechecks the bytes anonymously in
-  root, Solo, and Koota consumers; and creates the Gitea Release in a separate
-  minimal job only after registry and live-`main` proof succeeds.
+  dependencies, required peers, and installed optional peers.
+- Harden the release workflow: verify the annotated source tag and exact
+  `main` commit, publish with a trapped temporary credential, recheck the
+  published bytes anonymously in root, Solo, and Koota consumers, and create
+  the release only after that proof succeeds.
 
 ## 0.19.0
 

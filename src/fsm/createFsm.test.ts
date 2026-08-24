@@ -2,11 +2,31 @@ import { describe, expect, it } from 'vitest';
 import { StateMachine, Vehicle } from 'yuka';
 import { createCombatVehicle } from '../core/VehicleFactory.js';
 import {
+    createFsm,
     getStateName,
     restoreFsmState,
     snapshotFsmState,
     validateFsmStateSnapshot,
 } from './createFsm.js';
+
+describe('createFsm', () => {
+    it('registers every state and enters the initial one, retyped as AIVehicle', () => {
+        const vehicle = new Vehicle();
+        const aiVehicle = createFsm(vehicle, {
+            patrol: createCombatVehicle({ speed: 1 }).stateMachine.states.get('patrol')!,
+        }, 'patrol');
+        expect(aiVehicle).toBe(vehicle);
+        expect(aiVehicle.stateMachine).toBeInstanceOf(StateMachine);
+        expect(getStateName(aiVehicle.stateMachine)).toBe('patrol');
+    });
+});
+
+describe('getStateName', () => {
+    it('returns undefined when the machine has no active state', () => {
+        const fsm = new StateMachine(new Vehicle());
+        expect(getStateName(fsm)).toBeUndefined();
+    });
+});
 
 describe('Yuka FSM persistence', () => {
     it('round-trips the registered state id without serializing object graphs', () => {
@@ -52,6 +72,16 @@ describe('Yuka FSM persistence', () => {
             state: 'attack',
         });
         expect(() => validateFsmStateSnapshot(null)).toThrow(/must be an object/);
+        expect(() => validateFsmStateSnapshot({
+            schema: 'wrong-schema',
+            version: 1,
+            state: 'attack',
+        })).toThrow(/Unsupported Yuka FSM snapshot/);
+        expect(() => validateFsmStateSnapshot({
+            schema: 'arcade-ai-yuka-fsm',
+            version: 2,
+            state: 'attack',
+        })).toThrow(/Unsupported Yuka FSM snapshot/);
         expect(() => validateFsmStateSnapshot({
             schema: 'arcade-ai-yuka-fsm',
             version: 1,

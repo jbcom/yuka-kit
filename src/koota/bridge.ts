@@ -15,6 +15,17 @@ export interface AIBridgeTraits {
     deadStateId?: string;
 }
 
+/**
+ * Bidirectional bridge between a koota ECS entity and its backing yuka
+ * Vehicle/GameEntity. Games wire one `AIBridge` per world (not per entity) by
+ * passing the koota trait types they use for position, velocity, and
+ * optional health; the bridge never owns or constructs those traits itself.
+ *
+ * Typical per-frame usage: call `syncFromKoota()` before stepping yuka AI
+ * (pulling in physics-corrected position and health-driven death), then
+ * `syncToKoota()` after (pushing yuka's resulting velocity and FSM state name
+ * back onto the entity for rendering/animation systems to read).
+ */
 export class AIBridge {
     #traits: AIBridgeTraits;
     #deadStateId: string;

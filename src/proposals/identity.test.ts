@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     canonicalDeterministicIdentityTuple,
     deriveDeterministicIdentity,
+    DETERMINISTIC_IDENTITY_SCHEMA,
     validateDeterministicIdentity,
 } from './identity.js';
 
@@ -57,5 +58,27 @@ describe('deterministic identities', () => {
         const named = ['ok'];
         Object.assign(named, { extra: 'forbidden' });
         expect(() => deriveDeterministicIdentity('receipt', named)).toThrow('named property extra');
+    });
+
+    it('rejects an unrecognized identity kind', () => {
+        expect(() => canonicalDeterministicIdentityTuple('unknown' as never, components))
+            .toThrow('identity kind must be stream, proposal, or receipt');
+    });
+
+    it('rejects a component array carrying symbol keys', () => {
+        const withSymbol: unknown[] = ['ok'];
+        Object.defineProperty(withSymbol, Symbol('tag'), { value: 'x', enumerable: true });
+        expect(() => deriveDeterministicIdentity('stream', withSymbol as never))
+            .toThrow('must not contain symbol keys');
+    });
+
+    it('validateDeterministicIdentity rejects a string that fails the shape regex', () => {
+        expect(validateDeterministicIdentity('not-a-real-identity', 'stream', components)).toBe(false);
+        expect(validateDeterministicIdentity(`unknown-kind:${'a'.repeat(64)}`, 'stream', components)).toBe(false);
+    });
+
+    it('exposes the schema tag used in canonical tuples', () => {
+        expect(DETERMINISTIC_IDENTITY_SCHEMA).toBe('arcade-ai-yuka-identity/v1');
+        expect(canonicalDeterministicIdentityTuple('receipt', [1])).toContain(DETERMINISTIC_IDENTITY_SCHEMA);
     });
 });

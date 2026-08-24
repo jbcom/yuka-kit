@@ -17,7 +17,7 @@ describe('release workflow contract', () => {
   });
 
   it('publishes publicly with provenance under the extracted name', () => {
-    assert.equal(manifest.name, '@jbcom/yuka-kit');
+    assert.equal(manifest.name, '@jbdevprimary/yuka-kit');
     assert.equal(manifest.publishConfig.access, 'public');
     assert.equal(manifest.publishConfig.provenance, true);
     assert.equal(manifest.license, 'MIT');
@@ -29,7 +29,7 @@ describe('release workflow contract', () => {
 
   it('rejects an unpinned or credential-persisting checkout', () => {
     assert.throws(
-      () => validateReleaseWorkflows({ ci, publish: publish.replace(/actions\/checkout@v5/g, 'actions/checkout@main') }),
+      () => validateReleaseWorkflows({ ci, publish: publish.replace('actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8', 'actions/checkout@main') }),
       /pinned checkout/,
     );
     assert.throws(

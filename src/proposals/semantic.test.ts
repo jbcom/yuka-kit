@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     compareNormalizedUtf8,
+    compareSemanticCommandProposals,
     rankSemanticCommandProposals,
     SEMANTIC_COMMAND_PROPOSAL_SCHEMA,
     selectSemanticCommandProposal,
@@ -175,5 +176,70 @@ describe('strict semantic proposal protocol', () => {
             expect(error).toBeInstanceOf(SemanticProposalValidationError);
             expect((error as SemanticProposalValidationError).code).toBe('INVALID_PROPOSAL_ORDINAL');
         }
+    });
+
+    describe('compareSemanticCommandProposals', () => {
+        it('validates both sides and orders by the same total order as ranking', () => {
+            const higherUtility = proposal({ proposalId: 'high', utilityMicros: 900_000 });
+            const lowerUtility = proposal({ proposalId: 'low', utilityMicros: 100_000 });
+            expect(compareSemanticCommandProposals(higherUtility, lowerUtility)).toBeLessThan(0);
+            expect(compareSemanticCommandProposals(lowerUtility, higherUtility)).toBeGreaterThan(0);
+            expect(compareSemanticCommandProposals(higherUtility, proposal({ ...higherUtility }))).toBe(0);
+        });
+
+        it('propagates validation errors from either side', () => {
+            expect(() => compareSemanticCommandProposals(proposal({ goalOrdinal: -1 }), proposal()))
+                .toThrowError(SemanticProposalValidationError);
+            expect(() => compareSemanticCommandProposals(proposal(), proposal({ goalOrdinal: -1 })))
+                .toThrowError(SemanticProposalValidationError);
+        });
+    });
+
+    describe('plainRecord shape rejections (reached through proposal validation)', () => {
+        it('rejects a non-object proposal value outright', () => {
+            expect(() => validateSemanticCommandProposal(null))
+                .toThrowError(expect.objectContaining({ code: 'INVALID_PROPOSAL_SHAPE' }));
+            expect(() => validateSemanticCommandProposal('not-a-proposal'))
+                .toThrowError(expect.objectContaining({ code: 'INVALID_PROPOSAL_SHAPE' }));
+            expect(() => validateSemanticCommandProposal(42))
+                .toThrowError(expect.objectContaining({ code: 'INVALID_PROPOSAL_SHAPE' }));
+            expect(() => validateSemanticCommandProposal([proposal()]))
+                .toThrowError(expect.objectContaining({ code: 'INVALID_PROPOSAL_SHAPE' }));
+        });
+
+        it('rejects a proposal object carrying a symbol key', () => {
+            const withSymbol = { ...proposal() };
+            Object.defineProperty(withSymbol, Symbol('tag'), { value: 'x', enumerable: true });
+            expect(() => validateSemanticCommandProposal(withSymbol))
+                .toThrowError(expect.objectContaining({ code: 'INVALID_PROPOSAL_SHAPE' }));
+        });
+
+        it('rejects a proposal object with a non-enumerable field', () => {
+            const value: Record<string, unknown> = { ...proposal() };
+            Object.defineProperty(value, 'reasonCode', { value: 'HIDDEN', enumerable: false });
+            expect(() => validateSemanticCommandProposal(value))
+                .toThrowError(expect.objectContaining({ code: 'INVALID_PROPOSAL_SHAPE' }));
+        });
+
+        it('rejects targets that are not a plain array (custom Array subclass)', () => {
+            class FakeArray extends Array {}
+            const targets = FakeArray.from([{ roleId: 'a', roleOrdinal: 0, targetObservationEntryId: 'e' }]);
+            expect(() => validateSemanticCommandProposal(proposal({ targets })))
+                .toThrowError(expect.objectContaining({ code: 'INVALID_PROPOSAL_SHAPE' }));
+        });
+
+        it('rejects a targets array carrying a symbol key', () => {
+            const targets: unknown[] = [{ roleId: 'a', roleOrdinal: 0, targetObservationEntryId: 'e' }];
+            Object.defineProperty(targets, Symbol('tag'), { value: 'x', enumerable: true });
+            expect(() => validateSemanticCommandProposal(proposal({ targets })))
+                .toThrowError(expect.objectContaining({ code: 'INVALID_PROPOSAL_SHAPE' }));
+        });
+
+        it('rejects a targets array carrying a named property outside its index range', () => {
+            const targets: unknown[] = [{ roleId: 'a', roleOrdinal: 0, targetObservationEntryId: 'e' }];
+            (targets as unknown as Record<string, unknown>).extra = 'forbidden';
+            expect(() => validateSemanticCommandProposal(proposal({ targets })))
+                .toThrowError(expect.objectContaining({ code: 'INVALID_PROPOSAL_SHAPE' }));
+        });
     });
 });

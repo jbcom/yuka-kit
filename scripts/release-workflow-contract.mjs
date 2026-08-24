@@ -51,8 +51,8 @@ export const validateReleaseWorkflows = ({ ci, publish }) => {
     ['release', publish],
   ]) {
     // A mutable action reference is a supply-chain hole in a publishing repo.
-    requireText(workflow, 'actions/checkout@v5', `${name}: pinned checkout`);
-    requireText(workflow, 'actions/setup-node@v5', `${name}: pinned setup-node`);
+    requireText(workflow, 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8', `${name}: SHA-pinned checkout`);
+    requireText(workflow, 'actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444', `${name}: SHA-pinned setup-node`);
     // The toolchain is declared once, in .nvmrc, so it cannot drift from engines.
     requireText(workflow, 'node-version-file: .nvmrc', `${name}: nvmrc-pinned Node`);
     forbidText(workflow, 'node-version: 22', `${name}: Node pinned below engines`);
@@ -76,7 +76,7 @@ export const validateReleaseWorkflows = ({ ci, publish }) => {
   const publishJob = sectionBetween(publish, '  publish:', null);
 
   // The version and tag come from release-please, never from a typed input.
-  requireText(publish, 'googleapis/release-please-action@v4', 'release-please');
+  requireText(publish, 'googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7', 'SHA-pinned release-please');
   forbidText(publish, 'workflow_dispatch:\n  inputs:', 'hand-entered release input');
   requireText(releaseJob, 'contents: write');
   requireText(releaseJob, 'pull-requests: write');
