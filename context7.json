@@ -1,0 +1,24 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "Yuka Kit",
+  "description": "Deterministic game-AI primitives for Yuka-powered Node.js and browser games.",
+  "branch": "main",
+  "folders": [
+    "docs",
+    "src"
+  ],
+  "excludeFolders": [
+    "coverage",
+    "dist",
+    "node_modules"
+  ],
+  "excludeFiles": [
+    "CHANGELOG.md"
+  ],
+  "rules": [
+    "Use Node.js 24 or newer and pnpm through Corepack.",
+    "Import only from documented package entry points; the koota entry point is optional.",
+    "Keep simulation state deterministic and validate untrusted persistence snapshots before restoration.",
+    "Run pnpm verify before publishing a change that affects package behavior."
+  ]
+}

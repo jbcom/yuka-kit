@@ -29,7 +29,7 @@ describe('release workflow contract', () => {
 
   it('rejects an unpinned or credential-persisting checkout', () => {
     assert.throws(
-      () => validateReleaseWorkflows({ ci, publish: publish.replace(/actions\/checkout@v5/g, 'actions/checkout@main') }),
+      () => validateReleaseWorkflows({ ci, publish: publish.replace('actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8', 'actions/checkout@main') }),
       /pinned checkout/,
     );
     assert.throws(

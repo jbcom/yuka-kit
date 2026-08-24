@@ -1,0 +1,30 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+    groups:
+      non-major-dependencies:
+        update-types:
+          - minor
+          - patch
+      major-dependencies:
+        update-types:
+          - major
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+    groups:
+      non-major-dependencies:
+        update-types:
+          - minor
+          - patch
+      major-dependencies:
+        update-types:
+          - major

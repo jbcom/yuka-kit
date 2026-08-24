@@ -1,0 +1,27 @@
+name: Auto-merge encapsulated updates
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable-auto-merge:
+    # This workflow uses trusted default-branch code and deliberately never
+    # checks out or executes pull-request content. Release Please creates the
+    # release PR; Dependabot creates the grouped non-major dependency PR.
+    if: >-
+      github.event.pull_request.user.login == 'release-please[bot]' ||
+      (github.event.pull_request.user.login == 'dependabot[bot]' &&
+       startsWith(github.event.pull_request.title, 'Bump the non-major-dependencies group'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Enable merge-commit auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --merge --auto

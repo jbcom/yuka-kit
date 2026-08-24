@@ -15,8 +15,12 @@ tag scheme.
    `googleapis/release-please-action`. If unreleased commits exist, it opens
    or updates a release PR that bumps `package.json` and
    `.release-please-manifest.json` and updates `CHANGELOG.md`.
-3. Merging that release PR triggers the same workflow again, and this time
-   release-please creates the GitHub Release and the matching tag.
+3. The release PR is a mechanically generated encapsulation of commits that
+   already passed the normal CI gate. Its CI test job is intentionally skipped,
+   and the trusted `.github/workflows/automerge.yml` enables merge-commit
+   auto-merge using the organization `CI_GITHUB_TOKEN`. Merging it triggers
+   the same workflow again, and this time release-please creates the GitHub
+   Release and the matching tag.
 4. The workflow's `publish` job (gated on `release-please`'s `released`
    output) checks out that exact tag, installs with a frozen lockfile, runs
    `pnpm verify`, and runs `pnpm publish --access public --provenance

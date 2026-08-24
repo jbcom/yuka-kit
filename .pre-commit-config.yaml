@@ -1,0 +1,14 @@
+default_stages: [pre-commit]
+repos:
+  - repo: local
+    hooks:
+      - id: typecheck
+        name: TypeScript typecheck
+        entry: pnpm typecheck
+        language: system
+        pass_filenames: false
+      - id: package-format
+        name: package metadata is valid JSON
+        entry: node --input-type=module --eval "JSON.parse(await (await import('node:fs/promises')).readFile('package.json', 'utf8'))"
+        language: system
+        pass_filenames: false
