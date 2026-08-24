@@ -82,7 +82,7 @@
     "verify:dependency-currency": "node scripts/dependency-currency-bootstrap/verify.mjs",
     "smoke:consumer": "node scripts/smoke-fresh-consumer.mjs",
     "docs:build": "pnpm --filter @jbdevprimary/yuka-kit-docs run build",
-    "verify": "pnpm run verify:dependency-currency && pnpm run test:dependency-currency-bootstrap && pnpm run test:release-workflows && pnpm run typecheck && pnpm run test && pnpm run build && node scripts/smoke-package.mjs && pnpm run smoke:consumer && pnpm run docs:build"
+    "verify": "pnpm run verify:dependency-currency && pnpm run test:dependency-currency-bootstrap && pnpm run test:release-workflows && pnpm run typecheck && pnpm run test:coverage && pnpm run build && node scripts/smoke-package.mjs && pnpm run smoke:consumer && pnpm run docs:build"
   },
   "dependencies": {
     "@noble/hashes": "2.3.0"

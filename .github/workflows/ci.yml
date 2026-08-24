@@ -43,7 +43,7 @@ jobs:
           pnpm install --lockfile-only
           git diff --exit-code pnpm-lock.yaml
       - run: pnpm typecheck
-      - run: pnpm test
+      - run: pnpm test:coverage
       - run: pnpm build
       - run: pnpm docs:build
       # A published package whose types or exports are broken is worse than one
