@@ -20,8 +20,10 @@ jobs:
     # required workflows filtered out at trigger time remain pending on GitHub.
     if: >-
       github.event_name != 'pull_request' ||
-      (github.event.pull_request.user.login != 'release-please[bot]' &&
+      (!(github.event.pull_request.head.repo.full_name == github.repository &&
+         startsWith(github.event.pull_request.head.ref, 'release-please--')) &&
        !(github.event.pull_request.user.login == 'dependabot[bot]' &&
+         github.event.pull_request.head.repo.full_name == github.repository &&
          startsWith(github.event.pull_request.title, 'Bump the non-major-dependencies group')))
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -32,6 +34,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: .nvmrc
+          # setup-node otherwise discovers pnpm before Corepack has supplied it.
+          package-manager-cache: false
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - name: Lockfile is in sync

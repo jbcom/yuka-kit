@@ -25,21 +25,46 @@
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "koota": [
+        "dist/esm/koota/index.d.ts"
+      ],
+      "solo": [
+        "dist/esm/solo/index.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
-      "types": "./dist/esm/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.cts",
+        "default": "./dist/cjs/index.js"
+      }
     },
     "./koota": {
-      "types": "./dist/esm/koota/index.d.ts",
-      "import": "./dist/esm/koota/index.js",
-      "require": "./dist/cjs/koota/index.js"
+      "import": {
+        "types": "./dist/esm/koota/index.d.ts",
+        "default": "./dist/esm/koota/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/koota/index.d.cts",
+        "default": "./dist/cjs/koota/index.js"
+      }
     },
     "./solo": {
-      "types": "./dist/esm/solo/index.d.ts",
-      "import": "./dist/esm/solo/index.js",
-      "require": "./dist/cjs/solo/index.js"
+      "import": {
+        "types": "./dist/esm/solo/index.d.ts",
+        "default": "./dist/esm/solo/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/solo/index.d.cts",
+        "default": "./dist/cjs/solo/index.js"
+      }
     },
     "./package.json": "./package.json"
   },
