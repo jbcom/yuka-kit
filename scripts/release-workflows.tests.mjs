@@ -70,6 +70,16 @@ describe('release workflow contract', () => {
     );
   });
 
+  it('rejects a release that does not verify the public registry result', () => {
+    assert.throws(
+      () => validateReleaseWorkflows({
+        ci,
+        publish: publish.replace('      - name: Verify public registry publication\n', ''),
+      }),
+      /anonymous registry verification/,
+    );
+  });
+
   it('rejects an ungated or hand-tagged release', () => {
     assert.throws(
       () => validateReleaseWorkflows({ ci, publish: publish.replace("if: needs.release-please.outputs.released == 'true'", 'if: always()') }),

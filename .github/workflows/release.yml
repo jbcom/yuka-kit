@@ -63,3 +63,16 @@ jobs:
         run: pnpm publish --access public --provenance --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Verify public registry publication
+        run: |
+          package_version="$(node -p \"require('./package.json').version\")"
+          for attempt in 1 2 3 4 5 6; do
+            if npm view "@jbdevprimary/yuka-kit@${package_version}" version --registry=https://registry.npmjs.org | grep -Fx "${package_version}"; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 6 ]; then
+              sleep 10
+            fi
+          done
+          echo "Published package was not visible in the public npm registry after 60 seconds." >&2
+          exit 1

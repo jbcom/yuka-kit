@@ -93,9 +93,11 @@ export const validateReleaseWorkflows = ({ ci, publish }) => {
   requireText(publishJob, '--provenance', 'npm provenance');
   requireText(publishJob, '--access public');
   requireExactCount(publishJob, 'pnpm publish', 1, 'single publication command');
+  requireText(publishJob, 'Verify public registry publication', 'anonymous registry verification');
+  requireText(publishJob, 'npm view "@jbdevprimary/yuka-kit@${package_version}" version --registry=https://registry.npmjs.org', 'public registry lookup');
 
   // The gate must precede the publish, or it proves nothing about the bytes.
-  requireOrder(publishJob, ['pnpm install --frozen-lockfile', 'pnpm verify', 'pnpm publish']);
+  requireOrder(publishJob, ['pnpm install --frozen-lockfile', 'pnpm verify', 'pnpm publish', 'Verify public registry publication']);
 
   // The publish credential is scoped to the publish step alone.
   requireExactCount(publish, 'NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}', 1, 'step-scoped npm token');
