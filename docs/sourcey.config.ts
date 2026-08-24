@@ -2,7 +2,7 @@ import { defineConfig, markdown } from 'sourcey';
 
 export default defineConfig({
   name: 'Yuka Kit',
-  siteUrl: 'https://jbcom.github.io',
+  siteUrl: 'https://jonbogaty.com',
   baseUrl: '/yuka-kit',
   repo: 'https://github.com/jbcom/yuka-kit',
   editBranch: 'main',
