@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.20.0](https://github.com/jbcom/yuka-kit/compare/0.19.1...0.20.0) (2026-08-24)
+
+
+### Features
+
+* add deterministic proposal dispatch protocol ([e4b9b41](https://github.com/jbcom/yuka-kit/commit/e4b9b41f9a22e1afaa5152e51470b6bd759bcbbf))
+* add per-map encounter budgets ([4de92be](https://github.com/jbcom/yuka-kit/commit/4de92be14b4bf5b74e38dc73cb76eaf88ed1e6a7))
+* add Solo AI production systems ([5c0aeeb](https://github.com/jbcom/yuka-kit/commit/5c0aeebeb313b62c3b003158eb571cf924dcaf24))
+* add state-aware NPC routines ([cebd4b3](https://github.com/jbcom/yuka-kit/commit/cebd4b30e7751514e2d2eead3edc1b28b56dcf2a))
+* add Yuka tactical combat intents ([9240033](https://github.com/jbcom/yuka-kit/commit/924003312277d0836136f5059cf7dcb607850fa7))
+* automate releases and publish Sourcey docs ([a3c040c](https://github.com/jbcom/yuka-kit/commit/a3c040c166483a580b40cd9bfacad770d95db619))
+* bind governors to Solo combat actions ([6f8afd2](https://github.com/jbcom/yuka-kit/commit/6f8afd2ddbf0ae311255df845d995b3581b8ee83))
+* complete autonomous release and documentation foundation ([db23983](https://github.com/jbcom/yuka-kit/commit/db239837e42ae2baaed65c2d6b265512dd8375b2))
+* extract ai-yuka to standalone OSS @jbcom/yuka-kit ([2388fec](https://github.com/jbcom/yuka-kit/commit/2388fec14a9cd6a7f646d676c1eac3d2dbd4a779))
+* gate encounter rolls while combat is active ([c1818b2](https://github.com/jbcom/yuka-kit/commit/c1818b2ff5e7c13d7faf67f6644337380c2b78d1))
+* govern authored recovery routes ([8eb6854](https://github.com/jbcom/yuka-kit/commit/8eb68542c01e548b311e53fc66f489df93f2ac5a))
+* govern complete class combat kits ([7e02d12](https://github.com/jbcom/yuka-kit/commit/7e02d12ee78dc53fc2694cd0d443fa915693be0b))
+* govern projectile clearance ([97e3bd7](https://github.com/jbcom/yuka-kit/commit/97e3bd70ca050b24ba86c49e0e714f36b86ae9b4))
+* persist Yuka routine and FSM state ([6456e14](https://github.com/jbcom/yuka-kit/commit/6456e14555ed99c55828a2ffe4807655a617dd81))
+* respect authoritative command availability ([806caef](https://github.com/jbcom/yuka-kit/commit/806caefbc273992363f69a6f4b24c667529a171c))
+* share obstacle line of sight ([5e5955a](https://github.com/jbcom/yuka-kit/commit/5e5955ad7e4bfd2f417b943db140878c734d492f))
+* **solo:** bridge Yuka vehicles through commands ([3c030dc](https://github.com/jbcom/yuka-kit/commit/3c030dc8c8d40179908a2fa6e761d0f4935d985a))
+* **solo:** map normalized transfer coordinates ([66d5796](https://github.com/jbcom/yuka-kit/commit/66d579600ada2e1fee636e679f99f9595b408b9c))
+
+
+### Bug Fixes
+
+* advance managed combat brains in shared loop ([95eb24a](https://github.com/jbcom/yuka-kit/commit/95eb24a42952b2449faddf2ee74c62bc6494dfd7))
+* bootstrap Corepack before workflow package commands ([bbc9296](https://github.com/jbcom/yuka-kit/commit/bbc92968e2bf79ce24b6be3a20ffcdcf55db10ca))
+* defend mage against pack telegraphs ([005945b](https://github.com/jbcom/yuka-kit/commit/005945bb210d979b38937dcbed89cf1e8dd4268a))
+* export governor action contracts ([31211bb](https://github.com/jbcom/yuka-kit/commit/31211bb3e0764b437e0bfa46d1d0abcd57e86c93))
+* **governor:** release knight guard before movement ([ed057f3](https://github.com/jbcom/yuka-kit/commit/ed057f3cfcf1e984cd544e62d89e983a27a1a0d5))
+* hold knight guard through telegraphs ([d7ffd10](https://github.com/jbcom/yuka-kit/commit/d7ffd10755bc42f608407c326e12bf6374795554))
+* prevent Hunter kiting deadlocks ([9f7295b](https://github.com/jbcom/yuka-kit/commit/9f7295b7bbbaeb8418308acac10e5efc9c3469c8))
+* recognize Dependabot non-major updates ([043dc51](https://github.com/jbcom/yuka-kit/commit/043dc5194dc68947347506e2c3555f2ec67add90))
+* recognize Dependabot non-major updates ([ef08bef](https://github.com/jbcom/yuka-kit/commit/ef08befa18a8d50fedb376d85c729a3d5e3bb256))
+* recognize trusted release-please pull requests ([b0998c5](https://github.com/jbcom/yuka-kit/commit/b0998c54bc7dac04ffef032927635758eebc526f))
+* restore CI bootstrap and release PR filtering ([8e50006](https://github.com/jbcom/yuka-kit/commit/8e50006a5eccce66f9a1b427f2e42098209ef7e9))
+* ship CommonJS declaration graph ([0eee6f4](https://github.com/jbcom/yuka-kit/commit/0eee6f47064b498e096884273c9fcec7db0dda5b))
+* **solo:** convert governed movement speed units ([dbc72be](https://github.com/jbcom/yuka-kit/commit/dbc72bef8694e0947038fb877189560d0b10fcae))
+* trigger checks for release pull requests ([9080855](https://github.com/jbcom/yuka-kit/commit/9080855125e0b4dc9b937c88cafde2f5564a3990))
+* trigger checks for release pull requests ([aa79403](https://github.com/jbcom/yuka-kit/commit/aa7940319e38d5b8ff290c1d31da4630edd5ab10))
+
 ## 0.19.1
 
 - Align the deterministic SHA-256 runtime to `@noble/hashes@2.3.0` while
