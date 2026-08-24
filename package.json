@@ -1,21 +1,21 @@
 {
-  "name": "@arcade-cabinet/ai-yuka",
+  "name": "@jbcom/yuka-kit",
   "version": "0.19.1",
   "description": "Shared Yuka AI toolkit with deterministic encounters, NPC routines, class governors, and RPGJS Solo command-driven playthroughs.",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": false,
   "repository": {
     "type": "git",
-    "url": "ssh://gitea@redacted-private-registry.example/arcade-cabinet/ai-yuka.git"
+    "url": "git+https://github.com/jbcom/yuka-kit.git"
   },
   "engines": {
     "node": ">=24"
   },
   "packageManager": "pnpm@11.21.0",
   "publishConfig": {
-    "access": "restricted",
-    "registry": "https://redacted-private-registry.example/api/packages/arcade-cabinet/npm/"
+    "access": "public",
+    "provenance": true
   },
   "files": [
     "dist",
@@ -78,5 +78,9 @@
     "vite": "8.2.1",
     "vitest": "4.1.10",
     "yuka": "0.7.8"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/jbcom/yuka-kit/issues"
+  },
+  "homepage": "https://github.com/jbcom/yuka-kit#readme"
 }

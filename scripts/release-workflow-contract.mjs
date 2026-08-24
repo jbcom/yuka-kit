@@ -10,14 +10,11 @@ const forbidText = (source, text, label = text) => {
   if (source.includes(text)) fail(`workflow contract forbids ${label}`);
 };
 
-const requireCount = (source, text, minimum, label = text) => {
-  const count = source.split(text).length - 1;
-  if (count < minimum) fail(`workflow contract needs ${minimum} occurrence(s) of ${label}; found ${count}`);
-};
-
 const requireExactCount = (source, text, expected, label = text) => {
   const count = source.split(text).length - 1;
-  if (count !== expected) fail(`workflow contract needs exactly ${expected} occurrence(s) of ${label}; found ${count}`);
+  if (count !== expected) {
+    fail(`workflow contract needs exactly ${expected} occurrence(s) of ${label}; found ${count}`);
+  }
 };
 
 const requireOrder = (source, labels) => {
@@ -32,139 +29,83 @@ const requireOrder = (source, labels) => {
 
 const sectionBetween = (source, start, end) => {
   const startIndex = source.indexOf(start);
-  const endIndex = source.indexOf(end, startIndex + start.length);
-  if (startIndex < 0 || endIndex < 0) fail(`cannot isolate workflow section ${start}`);
-  return source.slice(startIndex, endIndex);
+  if (startIndex < 0) fail(`cannot isolate workflow section ${start}`);
+  const endIndex = end ? source.indexOf(end, startIndex + start.length) : source.length;
+  return source.slice(startIndex, endIndex < 0 ? source.length : endIndex);
 };
 
+/**
+ * Release contract for the GitHub-hosted OSS package.
+ *
+ * The Gitea ancestor of this file proved immutability by hand: authenticated
+ * Branch API probes, SHA-256 equality on the tarball and tar stream, and
+ * manually scoped publish tokens. On GitHub that trust model is replaced by
+ * release-please (the tag is derived from the merged commit, never typed) plus
+ * npm provenance (a signed, publicly verifiable attestation binding the
+ * published bytes to this repository and workflow). The invariants below are
+ * what still has to be enforced by inspection rather than by the platform.
+ */
 export const validateReleaseWorkflows = ({ ci, publish }) => {
-  for (const workflow of [ci, publish]) {
-    requireText(workflow, 'actions/checkout@v7');
-    requireText(workflow, 'persist-credentials: false');
-    requireText(workflow, 'actions/setup-node@v7');
-    requireText(workflow, 'node-version: 24.19.0');
-    requireText(workflow, 'pnpm@11.21.0');
-    requireText(workflow, 'pnpm install --frozen-lockfile');
-    requireText(workflow, 'npm pack --dry-run --json');
-  }
-  requireText(ci, 'package_version="$(node -p "require(\'./package.json\').version")"');
-  requireText(ci, 'process.argv[2]', 'CI dry-run version argument');
-  forbidText(ci, "report[0].version !== '0.19.1'", 'hard-coded CI package version');
-
-  const releaseMarker = '\n  release:\n';
-  const releaseIndex = publish.indexOf(releaseMarker);
-  if (releaseIndex < 0) fail('minimal release job is missing');
-  const packageJob = publish.slice(0, releaseIndex);
-  const releaseJob = publish.slice(releaseIndex);
-  const sourceStep = sectionBetween(
-    packageJob,
-    '- id: source',
-    '- name: Install exact dependencies',
-  );
-  const packagePublishStep = sectionBetween(
-    packageJob,
-    '- name: Publish the already packed bytes, or prove an identical retry',
-    '- id: registry',
-  );
-
-  requireText(publish, 'group: publish-ai-yuka-package', 'fixed package-wide concurrency');
-  forbidText(publish, 'group: publish-tagged-package-${{ inputs.tag }}', 'tag-scoped publish concurrency');
-  requireText(publish, 'expected_tag_object:');
-  requireText(publish, 'test "${tag_object}" = "${EXPECTED_TAG_OBJECT}"');
-  forbidText(packageJob, 'git fetch', 'unauthenticated private-repository fetch');
-  forbidText(packageJob, 'FETCH_HEAD', 'unavailable unauthenticated FETCH_HEAD proof');
-  requireExactCount(publish, '/branches/main', 3, 'authenticated live main Branch API proof');
-  requireText(sourceStep, 'GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}');
-  requireText(sourceStep, '/branches/main');
-  requireText(sourceStep, '--header @-', 'stdin-authenticated source Branch API');
-  requireText(sourceStep, 'fetched_main="$(jq -r \'.commit.id\' "${main_json}")"');
-  requireText(sourceStep, 'test "${fetched_main}" = "${head_commit}"');
-  requireText(sourceStep, 'unset GITEA_TOKEN');
-  requireText(packagePublishStep, 'GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}');
-  requireText(packagePublishStep, '/branches/main');
-  requireText(packagePublishStep, '--header @-', 'stdin-authenticated pre-publish Branch API');
-  requireText(
-    packagePublishStep,
-    'test "$(jq -r \'.commit.id\' "${main_json}")" = "${head_commit}"',
-    'pre-publish live main equality',
-  );
-  forbidText(publish, 'merge-base --is-ancestor', 'ancestor-only source proof');
-
-  requireOrder(publish, [
-    'Prove immutable source identity and exact remote main',
-    'Verify dependency currency, source, behavior, builds, and package entry points',
-    'Inspect the publishable package without creating an artifact',
-    'Pack exactly one immutable artifact',
-    'Publish the already packed bytes, or prove an identical retry',
-    'Prove anonymous metadata, bytes, and fresh root, Solo, and Koota consumers',
-    'release:',
-    'Create Gitea Release after package proof',
-  ]);
-  const publishCommand = publish.indexOf('pnpm publish "${{ steps.pack.outputs.tarball }}"');
-  const finalMainProbe = packagePublishStep.lastIndexOf('/branches/main');
-  const unsetTokens = packagePublishStep.indexOf('unset PRIVATE_NPM_PUBLISH_TOKEN GITEA_TOKEN');
-  const scopedPublish = packagePublishStep.indexOf('NPM_CONFIG_USERCONFIG="${auth_config}"');
-  if (
-    publishCommand < 0 ||
-    finalMainProbe < 0 ||
-    unsetTokens < finalMainProbe ||
-    scopedPublish < unsetTokens
-  ) {
-    fail('authenticated exact-main proof and token unsets must immediately precede publication');
+  for (const [name, workflow] of [
+    ['ci', ci],
+    ['release', publish],
+  ]) {
+    // A mutable action reference is a supply-chain hole in a publishing repo.
+    requireText(workflow, 'actions/checkout@v5', `${name}: pinned checkout`);
+    requireText(workflow, 'actions/setup-node@v5', `${name}: pinned setup-node`);
+    // The toolchain is declared once, in .nvmrc, so it cannot drift from engines.
+    requireText(workflow, 'node-version-file: .nvmrc', `${name}: nvmrc-pinned Node`);
+    forbidText(workflow, 'node-version: 22', `${name}: Node pinned below engines`);
+    // A checkout that keeps its credential leaves a usable token in .git/config.
+    requireText(workflow, 'persist-credentials: false', `${name}: credential-free checkout`);
+    requireText(workflow, 'pnpm install --frozen-lockfile', `${name}: frozen lockfile`);
+    requireText(workflow, 'runs-on: ubuntu-24.04', `${name}: pinned runner`);
   }
 
-  requireText(publish, 'auth_config="$(umask 077; mktemp "${RUNNER_TEMP}/ai-yuka-publish-auth.XXXXXX")"');
-  requireText(publish, 'trap cleanup EXIT HUP INT TERM');
-  requireText(publish, 'chmod 600 "${auth_config}"');
-  requireText(publish, 'test "$(stat -c \'%a\' "${auth_config}")" = 600');
-  requireText(publish, 'NPM_CONFIG_USERCONFIG="${auth_config}"');
-  requireText(
-    packagePublishStep,
-    'unset PRIVATE_NPM_PUBLISH_TOKEN GITEA_TOKEN\n            NPM_CONFIG_USERCONFIG="${auth_config}"',
-    'token unsets immediately before the pnpm child',
-  );
-  requireCount(publish, '--header @-', 6, 'stdin-fed authorization header');
-  forbidText(publish, 'pnpm config set', 'persistent pnpm auth configuration');
-  forbidText(publish, '--header "Authorization: token', 'secret-bearing curl argument');
+  // CI must not be able to publish, and must actually exercise the package.
+  requireText(ci, 'permissions:\n  contents: read', 'least-privilege CI permissions');
+  forbidText(ci, 'id-token: write', 'provenance permission in CI');
+  forbidText(ci, 'NODE_AUTH_TOKEN', 'publish credential in CI');
+  forbidText(ci, 'pnpm publish', 'publication from CI');
+  forbidText(ci, 'pnpm lint', 'phantom lint script');
+  requireText(ci, 'git diff --exit-code pnpm-lock.yaml', 'lockfile drift check');
+  requireText(ci, 'publint', 'package linting');
+  requireText(ci, '@arethetypeswrong/cli', 'export/type resolution check');
 
-  requireText(packageJob, 'PRIVATE_NPM_PUBLISH_TOKEN: ${{ secrets.PRIVATE_NPM_PUBLISH_TOKEN }}');
-  requireText(packageJob, 'permissions:\n      contents: read');
-  requireExactCount(packageJob, 'GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}', 2, 'step-scoped read token');
-  requireExactCount(packageJob, 'PRIVATE_NPM_PUBLISH_TOKEN: ${{ secrets.PRIVATE_NPM_PUBLISH_TOKEN }}', 1);
-  const packageOutsideAuthorizedSteps = packageJob
-    .replace(sourceStep, '')
-    .replace(packagePublishStep, '');
-  forbidText(packageOutsideAuthorizedSteps, 'GITEA_TOKEN:', 'Gitea token outside its proof steps');
-  forbidText(
-    packageOutsideAuthorizedSteps,
-    'PRIVATE_NPM_PUBLISH_TOKEN:',
-    'package token outside the publish step',
-  );
-  requireText(releaseJob, 'needs: publish');
-  requireText(releaseJob, 'permissions:\n      # This job has no checkout and no npm credential.');
+  const releaseJob = sectionBetween(publish, '  release-please:', '  publish:');
+  const publishJob = sectionBetween(publish, '  publish:', null);
+
+  // The version and tag come from release-please, never from a typed input.
+  requireText(publish, 'googleapis/release-please-action@v4', 'release-please');
+  forbidText(publish, 'workflow_dispatch:\n  inputs:', 'hand-entered release input');
   requireText(releaseJob, 'contents: write');
-  requireText(releaseJob, 'GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}');
-  requireExactCount(releaseJob, 'GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}', 1, 'release-step write token');
-  forbidText(releaseJob, 'PRIVATE_NPM_PUBLISH_TOKEN', 'package token in release job');
-  forbidText(releaseJob, 'actions/checkout', 'checkout in minimal release job');
-  forbidText(releaseJob, 'pnpm ', 'npm tooling in minimal release job');
-  requireText(releaseJob, '/branches/main');
-  requireText(releaseJob, '.commit.id == $commit', 'live main equality before Release');
-  requireText(releaseJob, '/git/refs/tags%2F${RELEASE_TAG}');
-  requireText(releaseJob, '/git/tags/${EXPECTED_TAG_OBJECT}');
-  requireText(
-    releaseJob,
-    '.tag == $tag and .sha == $tag_object and .object.type == "commit" and .object.sha == $commit',
-    'annotated tag object and peel equality',
-  );
-  requireText(releaseJob, '- Annotated tag object: ${EXPECTED_TAG_OBJECT}');
-  requireText(releaseJob, '(.body | contains($tag_object))');
+  requireText(releaseJob, 'pull-requests: write');
+  forbidText(releaseJob, 'NODE_AUTH_TOKEN', 'publish credential in the release-please job');
+  forbidText(releaseJob, 'pnpm publish', 'publication from the release-please job');
 
-  requireText(publish, 'test "${actual_sha256}" = "${EXPECTED_SHA256}"');
-  requireText(publish, 'test "${actual_tar_sha256}" = "${EXPECTED_TAR_SHA256}"');
-  requireText(publish, 'npm_config_ignore_scripts=true');
-  requireText(publish, 'cmp --silent "${{ steps.pack.outputs.tarball }}" "${downloaded_tarball}"');
-  requireText(publish, 'test ! -e "${consumer_dir}/node_modules/koota"');
-  requireText(publish, '@arcade-cabinet/ai-yuka/solo');
-  requireText(publish, '@arcade-cabinet/ai-yuka/koota');
+  // Publication is gated on a real release and runs the full local gate first.
+  requireText(publishJob, 'needs: release-please');
+  requireText(publishJob, "if: needs.release-please.outputs.released == 'true'", 'released gate');
+  requireText(publishJob, 'ref: ${{ needs.release-please.outputs.tag }}', 'checkout of the released tag');
+  requireText(publishJob, 'permissions:\n      contents: read', 'least-privilege publish contents');
+  requireText(publishJob, 'id-token: write', 'provenance permission');
+  requireText(publishJob, 'pnpm verify', 'full gate before publication');
+  requireText(publishJob, '--provenance', 'npm provenance');
+  requireText(publishJob, '--access public');
+  requireExactCount(publishJob, 'pnpm publish', 1, 'single publication command');
+
+  // The gate must precede the publish, or it proves nothing about the bytes.
+  requireOrder(publishJob, ['pnpm install --frozen-lockfile', 'pnpm verify', 'pnpm publish']);
+
+  // The publish credential is scoped to the publish step alone.
+  requireExactCount(publish, 'NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}', 1, 'step-scoped npm token');
+  forbidText(publish, 'npm config set', 'persistent npm auth configuration');
+  forbidText(publish, '//registry.npmjs.org/:_authToken=', 'inlined registry credential');
+
+  // This package is public on npm; the private Gitea scope must not survive.
+  for (const workflow of [ci, publish]) {
+    forbidText(workflow, 'redacted-private-registry.example', 'private Gitea registry');
+    forbidText(workflow, '@arcade-cabinet/', 'pre-extraction package scope');
+    forbidText(workflow, 'GITEA_TOKEN', 'Gitea credential');
+  }
 };

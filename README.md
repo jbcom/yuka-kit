@@ -1,7 +1,7 @@
-# @arcade-cabinet/ai-yuka
+# @jbcom/yuka-kit
 
 Shared game-AI toolkit wrapping [yuka.js](https://mugen87.github.io/yuka/) for
-the arcade-cabinet fleet: steering helpers, combat FSM states, goal-driven
+browser and Node games: steering helpers, combat FSM states, goal-driven
 `Think` brains with phase-aware boss AI, grid A\* pathfinding, physics-agnostic
 vision perception, deterministic encounter spawning, authored NPC routines,
 class-specific playthrough governors, and optional Koota/RPGJS Solo bridges.
@@ -34,13 +34,13 @@ inside-koota-traits), absorbing:
 ## Install
 
 ```sh
-pnpm add @arcade-cabinet/ai-yuka yuka
+pnpm add @jbcom/yuka-kit yuka
 # koota only if you use the ECS bridge:
 pnpm add koota
 ```
 
 `yuka` (`0.7.8`) is an exact peer dependency. `koota` is an **optional** peer — only
-needed for the `@arcade-cabinet/ai-yuka/koota` entry point.
+needed for the `@jbcom/yuka-kit/koota` entry point.
 
 yuka ships no TypeScript types; this package bundles an ambient
 `declare module 'yuka'` that consumers get transitively. If your repo has its
@@ -55,7 +55,7 @@ Everything except `koota/` is ECS-agnostic and operates on plain yuka
 ### core
 
 ```ts
-import { createVehicle, createCombatVehicle, createEntityManager, manage, stepAI } from '@arcade-cabinet/ai-yuka';
+import { createVehicle, createCombatVehicle, createEntityManager, manage, stepAI } from '@jbcom/yuka-kit';
 
 const enemy = createCombatVehicle(
   { speed: 3 }, // any config object with a speed works (mass/maxForce optional)
@@ -228,7 +228,7 @@ selection is a separate opt-in contract:
 import {
   RoutineAgent,
   type StateAwareRoutineSchedule,
-} from '@arcade-cabinet/ai-yuka';
+} from '@jbcom/yuka-kit';
 
 const schedule: StateAwareRoutineSchedule = {
   entries: [
@@ -339,7 +339,7 @@ import {
   deriveDeterministicIdentity,
   selectSemanticCommandProposal,
   SEMANTIC_COMMAND_PROPOSAL_SCHEMA,
-} from '@arcade-cabinet/ai-yuka';
+} from '@jbcom/yuka-kit';
 
 const streamId = deriveDeterministicIdentity('stream', [
   'npc-routine', 'policy:smith', 'entity:smith', 'scope:forge',
@@ -378,7 +378,7 @@ map to the engine's public guard action with `{ active: false }`. Observing
 startup telegraph, then release it through the public action before resuming
 movement.
 
-### RPGJS Solo (separate entry: `@arcade-cabinet/ai-yuka/solo`)
+### RPGJS Solo (separate entry: `@jbcom/yuka-kit/solo`)
 
 `SoloCommandAdapter` maps the Yuka XZ plane to RPGJS Solo XY commands and
 forces `source: 'ai'`. `runGovernedPlaythrough()` repeatedly observes the real
@@ -402,7 +402,7 @@ payloads, and extra fields fail before Solo dispatch.
 import {
   createAICommandDispatchEnvelope,
   SoloCommandAdapter,
-} from '@arcade-cabinet/ai-yuka/solo';
+} from '@jbcom/yuka-kit/solo';
 
 const adapter = new SoloCommandAdapter(runtime);
 if (selected) {
@@ -428,8 +428,8 @@ legacy integrations, including their explicit `transfer-map` support. They do
 not claim the strict proposal guarantees.
 
 ```ts
-import { ClassGovernor } from '@arcade-cabinet/ai-yuka';
-import { SoloCommandAdapter, runGovernedPlaythrough } from '@arcade-cabinet/ai-yuka/solo';
+import { ClassGovernor } from '@jbcom/yuka-kit';
+import { SoloCommandAdapter, runGovernedPlaythrough } from '@jbcom/yuka-kit/solo';
 
 const governor = new ClassGovernor({
     className: 'hunter',
@@ -480,10 +480,10 @@ stepAI(entityManager, 1 / 60);
 bridge.dispatchToSolo(enemyVehicle, runtime.getEntity('slime'), combat.canMove('slime').available);
 ```
 
-### koota (separate entry: `@arcade-cabinet/ai-yuka/koota`)
+### koota (separate entry: `@jbcom/yuka-kit/koota`)
 
 ```ts
-import { AIBridge, AIState, YukaRef, AIMemory, Intent, EnemyType, BossType } from '@arcade-cabinet/ai-yuka/koota';
+import { AIBridge, AIState, YukaRef, AIMemory, Intent, EnemyType, BossType } from '@jbcom/yuka-kit/koota';
 
 const bridge = new AIBridge({ Position, Velocity, Health }); // YOUR game's traits
 

@@ -1,6 +1,6 @@
 # Immutable package release
 
-`@arcade-cabinet/ai-yuka` versions and release tags are immutable. Historical
+`@jbcom/yuka-kit` versions and release tags are immutable. Historical
 tags omit a `v`, so the package version and annotated tag must match exactly
 (for example, package `0.19.1` uses tag `0.19.1`).
 

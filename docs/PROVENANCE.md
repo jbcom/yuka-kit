@@ -1,7 +1,7 @@
 # Source provenance
 
 This repository restores source ownership for the already-published
-`@arcade-cabinet/ai-yuka@0.1.0` package before extending it. The published
+`@jbcom/yuka-kit@0.1.0` package before extending it. The published
 artifact remains the behavioral baseline:
 
 - SHA-1: `5c65d65e4c20418e11ebfc085241bd2daf0fd051`

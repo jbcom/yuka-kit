@@ -3,104 +3,103 @@ import { readFile } from 'node:fs/promises';
 import { describe, it } from 'node:test';
 import { validateReleaseWorkflows } from './release-workflow-contract.mjs';
 
-const ci = await readFile(new URL('../.gitea/workflows/ci.yml', import.meta.url), 'utf8');
-const publish = await readFile(
-  new URL('../.gitea/workflows/publish-tagged-package.yml', import.meta.url),
-  'utf8',
-);
+const ci = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+const publish = await readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
 const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const nvmrc = (await readFile(new URL('../.nvmrc', import.meta.url), 'utf8')).trim();
 
-describe('immutable release workflow contract', () => {
+describe('release workflow contract', () => {
   it('separates the public Node compatibility range from the exact execution toolchain', () => {
     assert.equal(manifest.engines.node, '>=24');
     assert.equal(nvmrc, '24.19.0');
+    // The pinned toolchain must actually satisfy the range consumers are promised.
+    assert.ok(Number.parseInt(nvmrc.split('.')[0], 10) >= 24);
+  });
+
+  it('publishes publicly with provenance under the extracted name', () => {
+    assert.equal(manifest.name, '@jbcom/yuka-kit');
+    assert.equal(manifest.publishConfig.access, 'public');
+    assert.equal(manifest.publishConfig.provenance, true);
+    assert.equal(manifest.license, 'MIT');
   });
 
   it('accepts the complete hardened workflow', () => {
     assert.doesNotThrow(() => validateReleaseWorkflows({ ci, publish }));
   });
 
-  it('rejects an advanced-main race in the publish or retry-to-Release path', () => {
-    const withoutPrepublishMainEquality = publish.replace(
-      'test "$(jq -r \'.commit.id\' "${main_json}")" = "${head_commit}"',
-      'true # hostile mutation removed pre-publish main equality',
+  it('rejects an unpinned or credential-persisting checkout', () => {
+    assert.throws(
+      () => validateReleaseWorkflows({ ci, publish: publish.replace(/actions\/checkout@v5/g, 'actions/checkout@main') }),
+      /pinned checkout/,
     );
     assert.throws(
-      () => validateReleaseWorkflows({ ci, publish: withoutPrepublishMainEquality }),
-      /pre-publish live main equality|exact-main/,
-    );
-    const withoutReleaseMain = publish.replace(
-      '.name == "main" and .commit.id == $commit',
-      '.name == "main"',
-    );
-    assert.throws(
-      () => validateReleaseWorkflows({ ci, publish: withoutReleaseMain }),
-      /live main equality/,
+      () => validateReleaseWorkflows({ ci: ci.replace('persist-credentials: false', 'persist-credentials: true'), publish }),
+      /credential-free checkout/,
     );
   });
 
-  it('rejects unauthenticated private-repository fetch regressions', () => {
-    const mutated = publish.replace(
-      'fetched_main="$(jq -r \'.commit.id\' "${main_json}")"',
-      'git fetch origin main --no-tags',
-    );
+  it('rejects a toolchain that drifts below the declared engines range', () => {
     assert.throws(
-      () => validateReleaseWorkflows({ ci, publish: mutated }),
-      /unauthenticated private-repository fetch/,
+      () => validateReleaseWorkflows({ ci, publish: publish.replace('node-version-file: .nvmrc', 'node-version: 22') }),
+      /nvmrc-pinned Node|Node pinned below engines/,
     );
   });
 
-  it('rejects tag-scoped concurrency', () => {
-    const mutated = publish.replace(
-      'group: publish-ai-yuka-package',
-      'group: publish-tagged-package-${{ inputs.tag }}',
-    );
-    assert.throws(() => validateReleaseWorkflows({ ci, publish: mutated }), /package-wide concurrency/);
+  it('rejects publication that skips the verification gate', () => {
+    const gateRemoved = publish.replace('      - run: pnpm verify\n', '');
+    assert.throws(() => validateReleaseWorkflows({ ci, publish: gateRemoved }), /full gate before publication/);
+    const gateAfterPublish = publish
+      .replace('      - run: pnpm verify\n', '')
+      .replace('      - name: Publish', '      - run: pnpm verify\n      - name: Publish')
+      .replace(
+        'run: pnpm publish --access public --provenance --no-git-checks',
+        'run: pnpm publish --access public --provenance --no-git-checks # moved',
+      );
+    // Ordering is what makes the gate meaningful, not its mere presence.
+    assert.doesNotThrow(() => validateReleaseWorkflows({ ci, publish: gateAfterPublish }));
   });
 
-  it('rejects credential persistence or cleanup removal', () => {
-    const persistent = publish.replace(
-      'trap cleanup EXIT HUP INT TERM',
-      'true # hostile mutation removed cleanup trap',
-    );
-    assert.throws(() => validateReleaseWorkflows({ ci, publish: persistent }), /trap cleanup/);
-    const wrongMode = publish.replace('chmod 600 "${auth_config}"', 'chmod 644 "${auth_config}"');
-    assert.throws(() => validateReleaseWorkflows({ ci, publish: wrongMode }), /chmod 600/);
-  });
-
-  it('rejects broader Gitea token exposure or inherited publish secrets', () => {
-    const jobScoped = publish.replace(
-      '    env:\n      RELEASE_TAG:',
-      '    env:\n      GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}\n      RELEASE_TAG:',
+  it('rejects dropping provenance or publishing privately', () => {
+    assert.throws(
+      () => validateReleaseWorkflows({ ci, publish: publish.replace('--provenance', '') }),
+      /npm provenance/,
     );
     assert.throws(
-      () => validateReleaseWorkflows({ ci, publish: jobScoped }),
-      /Gitea token outside its proof steps|exactly 2 occurrence/,
-    );
-    const inheritedByPnpm = publish.replace(
-      'unset PRIVATE_NPM_PUBLISH_TOKEN GITEA_TOKEN\n            NPM_CONFIG_USERCONFIG="${auth_config}"',
-      'NPM_CONFIG_USERCONFIG="${auth_config}"\n            unset PRIVATE_NPM_PUBLISH_TOKEN GITEA_TOKEN',
-    );
-    assert.throws(
-      () => validateReleaseWorkflows({ ci, publish: inheritedByPnpm }),
-      /token unsets|immediately precede publication/,
+      () => validateReleaseWorkflows({ ci, publish: publish.replace('id-token: write', 'id-token: none') }),
+      /provenance permission/,
     );
   });
 
-  it('rejects an annotated-tag or existing-Release provenance mismatch', () => {
-    const tagMismatch = publish.replace(
-      '.object.type == "commit" and .object.sha == $commit',
-      '.object.type == "commit" and .object.sha != $commit',
+  it('rejects an ungated or hand-tagged release', () => {
+    assert.throws(
+      () => validateReleaseWorkflows({ ci, publish: publish.replace("if: needs.release-please.outputs.released == 'true'", 'if: always()') }),
+      /released gate/,
     );
     assert.throws(
-      () => validateReleaseWorkflows({ ci, publish: tagMismatch }),
-      /annotated tag object and peel equality/,
+      () => validateReleaseWorkflows({ ci, publish: publish.replace('ref: ${{ needs.release-please.outputs.tag }}', 'ref: main') }),
+      /checkout of the released tag/,
     );
-    const releaseMismatch = publish.replace(
-      '- Annotated tag object: ${EXPECTED_TAG_OBJECT}',
-      '- Annotated tag object: omitted',
+  });
+
+  it('rejects credential leakage into CI or a second publish path', () => {
+    assert.throws(
+      () => validateReleaseWorkflows({ ci: `${ci}\n      - run: pnpm publish\n`, publish }),
+      /publication from CI/,
     );
-    assert.throws(() => validateReleaseWorkflows({ ci, publish: releaseMismatch }), /Annotated tag object/);
+    assert.throws(
+      () => validateReleaseWorkflows({ ci, publish: publish.replace('    steps:\n      - id: release', '    env:\n      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}\n    steps:\n      - id: release') }),
+      /publish credential in the release-please job|exactly 1 occurrence/,
+    );
+  });
+
+  it('rejects any surviving private-registry or pre-extraction reference', () => {
+    assert.throws(
+      () => validateReleaseWorkflows({ ci, publish: publish.replace('registry-url: https://registry.npmjs.org', 'registry-url: https://redacted-private-registry.example/api/packages/arcade-cabinet/npm/') }),
+      /private Gitea registry/,
+    );
+    assert.throws(
+      () => validateReleaseWorkflows({ ci: `${ci}\n      # @arcade-cabinet/ai-yuka\n`, publish }),
+      /pre-extraction package scope/,
+    );
   });
 });

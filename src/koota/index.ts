@@ -1,6 +1,6 @@
 /// <reference path="../yuka.d.ts" />
 /**
- * @module @arcade-cabinet/ai-yuka/koota
+ * @module @jbcom/yuka-kit/koota
  * Koota-ECS bridge for the AI toolkit. Imported separately from the root
  * barrel so games not on koota never pull the koota dependency.
  */
