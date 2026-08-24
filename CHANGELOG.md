@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.20.1](https://github.com/jbcom/yuka-kit/compare/0.20.0...0.20.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* verify public npm publication ([e49cbdf](https://github.com/jbcom/yuka-kit/commit/e49cbdf55555ffca3320213be43e478b67d3818a))
+* verify public npm publication ([a6b91ca](https://github.com/jbcom/yuka-kit/commit/a6b91ca5a8b68f72361a8948f5fbddf13090a2ec))
+
 ## [0.20.0](https://github.com/jbcom/yuka-kit/compare/0.19.1...0.20.0) (2026-08-24)
 
 
