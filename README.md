@@ -6,7 +6,7 @@ browser and Node games: steering helpers, combat FSM states, goal-driven
 vision perception, deterministic encounter spawning, authored NPC routines,
 class-specific playthrough governors, and optional Koota/RPGJS Solo bridges.
 
-This Gitea repository is the source of truth for the private package. Version
+This repository is the source of truth for the package. Version
 `0.1.0` restored the originally published artifact; `0.2.0` added the production
 systems needed by RPGJS Solo games, `0.3.0` added structured combat bindings,
 `0.4.0` added authoritative command-availability observations, `0.7.0`
@@ -22,13 +22,12 @@ releases retain the public Node.js `>=24` compatibility contract and pin the
 current underlying Yuka release. Repository verification and publication use
 the exact current Node.js 24 LTS toolchain recorded in `.nvmrc` and CI.
 
-Extracted from the deepest production yuka integration available — the only
-source that had already solved yuka-objects-inside-koota-traits — absorbing:
+Extracted and generalized from production yuka integrations, absorbing:
 
-- **pond-warfare** — flocking/separation/obstacle-avoidance steering helpers
-- **goats-in-hell** — binary-heap grid A\* + the goal/evaluator vocabulary
-- **aethermoor** — the raycast-perception → FSM pattern
-- **voxel-realms** — waypoint path-following defaults
+- flocking/separation/obstacle-avoidance steering helpers
+- binary-heap grid A\* pathfinding + a goal/evaluator vocabulary
+- a raycast-perception → FSM pattern
+- waypoint path-following defaults
 
 ## Install
 
