@@ -78,11 +78,11 @@ import {
   validateRoutineAgentSnapshot,
   type RoutineSchedule,
   type StateAwareRoutineSchedule,
-} from '@jbcom/yuka-kit';
+} from '@jbdevprimary/yuka-kit';
 import {
   createAICommandDispatchEnvelope,
   SoloCommandAdapter,
-} from '@jbcom/yuka-kit/solo';
+} from '@jbdevprimary/yuka-kit/solo';
 
 const legacy: RoutineSchedule = {
   home: { mapId: 'home', position: { x: 0, y: 0, z: 0 } },
@@ -199,7 +199,7 @@ import {
   resolveStateAwareRoutineTarget,
   TacticalCombatAgent,
   validateEncounterDirectorSnapshot,
-} from '@jbcom/yuka-kit';
+} from '@jbdevprimary/yuka-kit';
 const target = resolveStateAwareRoutineTarget({
   entries: [{ id: 'work', mapId: 'town', position: { x: 1, y: 0, z: 1 }, when: { phaseId: 'work' } }],
 }, { day: 1, minuteOfDay: 1, mapId: 'home', position: { x: 0, y: 0, z: 0 }, phaseId: 'work' });
@@ -218,7 +218,7 @@ const {
   resolveStateAwareRoutineTarget,
   TacticalCombatAgent,
   validateEncounterDirectorSnapshot,
-} = require('@jbcom/yuka-kit');
+} = require('@jbdevprimary/yuka-kit');
 const target = resolveStateAwareRoutineTarget({
   entries: [{ id: 'work', mapId: 'town', position: { x: 1, y: 0, z: 1 }, when: { phaseId: 'work' } }],
 }, { day: 1, minuteOfDay: 1, mapId: 'home', position: { x: 0, y: 0, z: 0 }, phaseId: 'work' });
@@ -238,7 +238,7 @@ if (new TacticalCombatAgent({ tactic: 'melee', detectionRange: 5, attackRange: 1
     '--registry=https://registry.npmjs.org/', 'koota@0.6.6',
   ]);
   await writeFile(join(consumerDirectory, 'koota-consumer.ts'), `
-import { AIBridge, AIState, type AIBridgeTraits } from '@jbcom/yuka-kit/koota';
+import { AIBridge, AIState, type AIBridgeTraits } from '@jbdevprimary/yuka-kit/koota';
 const bridgeConstructor: typeof AIBridge = AIBridge;
 const stateTrait = AIState;
 const traits = null as AIBridgeTraits | null;
@@ -257,11 +257,11 @@ void traits;
     include: ['koota-consumer.ts'],
   }, null, 2));
   await writeFile(join(consumerDirectory, 'koota-esm.mjs'), `
-import { AIBridge, AIState } from '@jbcom/yuka-kit/koota';
+import { AIBridge, AIState } from '@jbdevprimary/yuka-kit/koota';
 if (typeof AIBridge !== 'function' || !AIState) throw new Error('ESM koota bridge export failed');
 `);
   await writeFile(join(consumerDirectory, 'koota-cjs.cjs'), `
-const { AIBridge, AIState } = require('@jbcom/yuka-kit/koota');
+const { AIBridge, AIState } = require('@jbdevprimary/yuka-kit/koota');
 if (typeof AIBridge !== 'function' || !AIState) throw new Error('CJS koota bridge export failed');
 `);
   run(join(consumerDirectory, 'node_modules/.bin/tsc'), ['--project', 'koota-tsconfig.json']);

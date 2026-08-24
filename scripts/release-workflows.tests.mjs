@@ -17,7 +17,7 @@ describe('release workflow contract', () => {
   });
 
   it('publishes publicly with provenance under the extracted name', () => {
-    assert.equal(manifest.name, '@jbcom/yuka-kit');
+    assert.equal(manifest.name, '@jbdevprimary/yuka-kit');
     assert.equal(manifest.publishConfig.access, 'public');
     assert.equal(manifest.publishConfig.provenance, true);
     assert.equal(manifest.license, 'MIT');

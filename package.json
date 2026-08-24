@@ -1,5 +1,5 @@
 {
-  "name": "@jbcom/yuka-kit",
+  "name": "@jbdevprimary/yuka-kit",
   "version": "0.19.1",
   "description": "Shared Yuka AI toolkit with deterministic encounters, NPC routines, class governors, and RPGJS Solo command-driven playthroughs.",
   "type": "module",
