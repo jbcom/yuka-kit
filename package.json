@@ -85,7 +85,7 @@
     "verify": "pnpm run verify:dependency-currency && pnpm run test:dependency-currency-bootstrap && pnpm run test:release-workflows && pnpm run typecheck && pnpm run test:coverage && pnpm run build && node scripts/smoke-package.mjs && pnpm run smoke:consumer && pnpm run docs:build"
   },
   "dependencies": {
-    "@noble/hashes": "2.3.0"
+    "@noble/hashes": "2.4.0"
   },
   "peerDependencies": {
     "koota": "0.6.6",
@@ -98,12 +98,12 @@
   },
   "devDependencies": {
     "@types/node": "24.13.3",
-    "@vitest/coverage-v8": "4.1.10",
+    "@vitest/coverage-v8": "4.1.11",
     "esbuild": "0.28.2",
     "koota": "0.6.6",
     "typescript": "7.0.2",
-    "vite": "8.2.1",
-    "vitest": "4.1.10",
+    "vite": "8.2.2",
+    "vitest": "4.1.11",
     "yuka": "0.7.8"
   },
   "bugs": {
