@@ -27,6 +27,9 @@
   "types": "./dist/esm/index.d.ts",
   "typesVersions": {
     "*": {
+      "goap": [
+        "dist/esm/goap/index.d.ts"
+      ],
       "koota": [
         "dist/esm/koota/index.d.ts"
       ],
@@ -44,6 +47,16 @@
       "require": {
         "types": "./dist/cjs/index.d.cts",
         "default": "./dist/cjs/index.js"
+      }
+    },
+    "./goap": {
+      "import": {
+        "types": "./dist/esm/goap/index.d.ts",
+        "default": "./dist/esm/goap/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/goap/index.d.cts",
+        "default": "./dist/cjs/goap/index.js"
       }
     },
     "./koota": {

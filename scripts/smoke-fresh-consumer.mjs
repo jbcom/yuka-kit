@@ -34,6 +34,10 @@ try {
     'dist/esm/index.d.ts',
     'dist/esm/proposals/identity.d.ts',
     'dist/esm/solo/index.d.ts',
+    'dist/esm/goap/index.js',
+    'dist/esm/goap/index.d.ts',
+    'dist/cjs/goap/index.js',
+    'dist/cjs/goap/index.d.cts',
     'dist/cjs/index.js',
     'dist/cjs/index.d.cts',
     'dist/cjs/koota/index.d.cts',
@@ -86,6 +90,52 @@ import {
   createAICommandDispatchEnvelope,
   SoloCommandAdapter,
 } from '@jbdevprimary/yuka-kit/solo';
+import {
+  createHearingSensor,
+  createLitVisionSensor,
+  PerceptionMemory,
+  type HeardNoise,
+} from '@jbdevprimary/yuka-kit';
+import {
+  GoapActionRegistry,
+  GoapGoalEvaluator,
+  GoapPlanGoal,
+  planGoap,
+  validateGoapPlanSnapshot,
+  type GoapActionDefinition,
+  type GoapWorldState,
+} from '@jbdevprimary/yuka-kit/goap';
+import { GameEntity, Goal, Think } from 'yuka';
+
+class Companion extends GameEntity {
+  facts: Record<string, string | number | boolean> = { near: false };
+}
+const approach: GoapActionDefinition<Companion> = {
+  id: 'approach', cost: 1, preconditions: {}, effects: { near: true },
+  createGoal: (owner) => new Goal(owner),
+};
+const goapRegistry = new GoapActionRegistry<Companion>();
+goapRegistry.register(approach);
+const companion = new Companion();
+const sense = (owner: Companion): GoapWorldState => ({ ...owner.facts });
+const goapBrain = new Think(companion);
+goapBrain.addEvaluator(new GoapGoalEvaluator<Companion>({
+  goalId: 'close-in', goal: { near: true }, registry: goapRegistry, sense,
+  desirability: () => 1, brain: () => goapBrain,
+}));
+const planGoal = new GoapPlanGoal(companion, { goalId: 'close-in', goal: { near: true }, registry: goapRegistry, sense });
+validateGoapPlanSnapshot(planGoal.snapshot());
+const typedPlan = planGoap({ near: false }, { near: { op: 'eq', value: true } }, goapRegistry.actionsFor(companion));
+if (!typedPlan.found || typedPlan.actions[0]?.id !== 'approach') throw new Error('typed GOAP export failed');
+
+const hearing = createHearingSensor({ threshold: 0.5, occlusion: () => 1 });
+const noises: HeardNoise[] = hearing.hear({ x: 0, y: 0, z: 0 }, [
+  { position: { x: 1, y: 0, z: 0 }, loudness: 2, kind: 'scream', time: 0, source: 'mummy' },
+]);
+const perceptionMemory = new PerceptionMemory({ halfLife: 5 });
+for (const noise of noises) perceptionMemory.recordNoise(noise);
+PerceptionMemory.restore(perceptionMemory.snapshot());
+createLitVisionSensor<string>(() => null, { range: 10, isTarget: (hit) => hit === 'mummy', lightAt: () => 0.5 });
 
 const legacy: RoutineSchedule = {
   home: { mapId: 'home', position: { x: 0, y: 0, z: 0 } },
@@ -233,21 +283,55 @@ if (new TacticalCombatAgent({ tactic: 'melee', detectionRange: 5, attackRange: 1
   position: { x: 0, y: 0, z: 0 }, target: { x: 0.5, y: 0, z: 0 }, healthPct: 1,
 }).behavior !== 'attack') throw new Error('CJS tactical export failed');
 `);
+  const goapRuntimeCheck = (label) => `
+const plan = planGoap({ near: false }, { claimed: true }, [
+  { id: 'claim', cost: 1, preconditions: { near: true }, effects: { claimed: true } },
+  { id: 'approach', cost: 2, preconditions: {}, effects: { near: true } },
+]);
+if (!plan.found || plan.actions.map(({ id }) => id).join() !== 'approach,claim') throw new Error('${label} GOAP plan failed');
+if (typeof GoapPlanGoal !== 'function' || typeof GoapGoalEvaluator !== 'function') throw new Error('${label} GOAP executor export failed');
+const memory = new PerceptionMemory({ halfLife: 2 });
+memory.recordSighting('mummy', { x: 1, y: 0, z: 0 }, 0);
+if (memory.get('mummy', 2).confidence !== 0.5) throw new Error('${label} perception memory export failed');
+`;
+  await writeFile(join(consumerDirectory, 'goap-esm.mjs'), `
+import { planGoap, GoapPlanGoal, GoapGoalEvaluator } from '@jbdevprimary/yuka-kit/goap';
+import { PerceptionMemory } from '@jbdevprimary/yuka-kit';
+${goapRuntimeCheck('ESM')}`);
+  await writeFile(join(consumerDirectory, 'goap-cjs.cjs'), `
+const { planGoap, GoapPlanGoal, GoapGoalEvaluator } = require('@jbdevprimary/yuka-kit/goap');
+const { PerceptionMemory } = require('@jbdevprimary/yuka-kit');
+${goapRuntimeCheck('CJS')}`);
   run(process.execPath, ['esm.mjs']);
   run(process.execPath, ['cjs.cjs']);
+  run(process.execPath, ['goap-esm.mjs']);
+  run(process.execPath, ['goap-cjs.cjs']);
 
   run('npm', [
     'install', '--ignore-scripts', '--no-audit', '--no-fund',
     '--registry=https://registry.npmjs.org/', 'koota@0.6.6',
   ]);
   await writeFile(join(consumerDirectory, 'koota-consumer.ts'), `
-import { AIBridge, AIState, type AIBridgeTraits } from '@jbdevprimary/yuka-kit/koota';
+import {
+  AIAwareness, AIBridge, AIHearing, AIPerceptionMemory, AIState, type AIBridgeTraits,
+} from '@jbdevprimary/yuka-kit/koota';
+import { PerceptionMemory } from '@jbdevprimary/yuka-kit';
+import { createWorld, trait } from 'koota';
 const bridgeConstructor: typeof AIBridge = AIBridge;
 const stateTrait = AIState;
 const traits = null as AIBridgeTraits | null;
+const Position = trait({ x: 0, y: 0, z: 0 });
+const Velocity = trait({ x: 0, y: 0, z: 0 });
+const memory = new PerceptionMemory({ halfLife: 4 });
+memory.recordSighting('mummy', { x: 1, y: 0, z: 0 }, 0);
+const entity = createWorld().spawn(AIPerceptionMemory({ memory }), AIAwareness, AIHearing);
+const strongest = new AIBridge({ Position, Velocity }).syncPerceptionMemory(entity, 0);
+const sense: '' | 'sight' | 'hearing' | undefined = entity.get(AIAwareness)?.sense;
 void bridgeConstructor;
 void stateTrait;
 void traits;
+void strongest;
+void sense;
 `);
   await writeFile(join(consumerDirectory, 'koota-tsconfig.json'), JSON.stringify({
     compilerOptions: {

@@ -2,9 +2,11 @@
 
 Shared game-AI toolkit wrapping [yuka.js](https://mugen87.github.io/yuka/) for
 browser and Node games: steering helpers, combat FSM states, goal-driven
-`Think` brains with phase-aware boss AI, grid A\* pathfinding, physics-agnostic
-vision perception, deterministic encounter spawning, authored NPC routines,
-class-specific playthrough governors, and optional Koota/RPGJS Solo bridges.
+`Think` brains with phase-aware boss AI, a deterministic GOAP planner that runs
+plans as Yuka goals, grid A\* pathfinding, physics-agnostic vision (including
+light-scaled vision), hearing and per-target perception memory, deterministic
+encounter spawning, authored NPC routines, class-specific playthrough
+governors, and optional Koota/RPGJS Solo bridges.
 
 **Documentation:** [jonbogaty.com/yuka-kit](https://jonbogaty.com/yuka-kit/)
 for guided integration, API catalogue, persistence rules, and the agentic
@@ -564,6 +566,112 @@ bridge.syncFromSolo(enemyVehicle, runtime.getEntity('slime'));
 stepAI(entityManager, 1 / 60);
 bridge.dispatchToSolo(enemyVehicle, runtime.getEntity('slime'), combat.canMove('slime').available);
 ```
+
+### GOAP (separate entry: `@jbdevprimary/yuka-kit/goap`)
+
+Goal-oriented action planning on top of Yuka's goal system. A `Think`
+evaluator picks *what* to do; the planner works out *how*, as a sequence of
+actions; the plan runs as Yuka goals, one action at a time.
+
+```ts
+import {
+  GoapActionRegistry, GoapGoalEvaluator, planGoap,
+} from '@jbdevprimary/yuka-kit/goap';
+
+const actions = new GoapActionRegistry<Companion>();
+actions.register({
+  id: 'approach-in-darkness', cost: 2,
+  preconditions: { targetKnown: true }, effects: { nearTarget: true },
+  createGoal: (owner) => new ApproachGoal(owner),
+});
+actions.register({
+  id: 'extinguish-torch', cost: 1,
+  preconditions: { nearTorch: true }, effects: { targetLit: false },
+  createGoal: (owner) => new ExtinguishGoal(owner),
+});
+actions.register({
+  id: 'claim', cost: 1,
+  preconditions: { nearTarget: true, targetLit: false, mana: { op: 'gte', value: 10 } },
+  effects: { targetClaimed: true },
+  createGoal: (owner) => new ClaimGoal(owner),
+});
+
+// An equipped item contributes actions; unequipping revokes them.
+const unequip = actions.contribute('item:sun-staff', [emitPulse]);
+
+brain.addEvaluator(new GoapGoalEvaluator({
+  goalId: 'claim',
+  goal: { targetClaimed: true },
+  registry: actions,
+  sense: (owner) => owner.worldState(),
+  desirability: (owner) => owner.role === 'hunt' ? 0.8 : 0.2,
+}));
+```
+
+**World state** is a flat record of `string | number | boolean` values.
+A **condition** is either a value (equality) or a predicate
+`{ op: 'eq' | 'neq', value }` / `{ op: 'lt' | 'lte' | 'gt' | 'gte', value:
+number }`. A missing key fails every condition except `neq`. **Effects** set
+values.
+
+**Actions** are `{ id, cost, preconditions, effects }`. `cost` is a
+non-negative number, or a function of the search state (so an action can cost
+more after an earlier step spent a resource). A function cost should declare
+`minCost`, the cheapest it can ever be; the planner throws if it returns less,
+because a wrong lower bound would make plans silently suboptimal.
+
+**`planGoap(start, goal, actions, { maxExpansions? })`** is A\* over world
+states. It returns `{ found: true, actions, cost, expanded }` with a cheapest
+plan, or `{ found: false, reason, expanded }` where `reason` is
+`'unreachable'` (the search space is exhausted) or `'expansion-limit'`
+(`maxExpansions`, default `2048`, was hit first). The heuristic, unsatisfied
+goal conditions divided by the most goal conditions any single action can
+fix, times the cheapest action cost, never overestimates, so returned plans
+are optimal. Ties are broken deterministically: actions expand in `id` order
+(UTF-16 code-unit comparison, not locale order), so the same action set
+returns the same plan whatever order it was registered in. Duplicate ids,
+negative or non-finite costs, and malformed conditions throw `TypeError`
+before the search starts.
+
+**`GoapActionRegistry<Owner>`** holds an agent's actions and their Yuka goal
+factories (`createGoal(owner)`). `register(definition, source = 'base')` and
+`contribute(source, definitions)` (all or nothing) return an undo function;
+`revoke(source)` removes everything a source added. An optional
+`isAvailable(owner)` hides an action at planning time, for checks that do not
+belong in world state. `actionsFor(owner)` lists the plannable actions in `id`
+order.
+
+**`GoapPlanGoal<Owner>`** is a Yuka `CompositeGoal` that plans on activation
+and runs the plan as one subgoal per action:
+
+- Before each step it senses the world again and checks the step's
+  preconditions and `isAvailable`. If they no longer hold, or the step's goal
+  fails, it replans from the current state, up to `maxReplans` (default `3`)
+  times, and then fails.
+- When the last step completes, it checks the goal against the sensed state.
+  If the goal does not hold yet, it replans.
+- A missing plan sets the goal to `FAILED`, and `lastFailure` records why,
+  so `Think` re-arbitrates on its next update.
+- `plan`, `step`, `currentActionId`, and `replans` expose progress, for
+  example for `bridge.writeIntent(entity, goal.currentActionId ?? '')`.
+
+**`GoapGoalEvaluator<Owner>`** is the `Think` integration. Its desirability
+comes from your `desirability(owner)` function. By default it scores `0` when
+no plan exists, so `Think` never picks an impossible goal; it plans once per
+arbitration and hands that plan to the goal. Picking the same `goalId` again
+while that goal is still running keeps the running plan instead of restarting
+it. The evaluator finds the brain through the `_brain` tag set by
+`createBrain`.
+
+**Persistence.** `goal.snapshot()` returns `{ schema:
+'arcade-ai-yuka-goap-plan', version: 1, goalId, plan: actionIds, step,
+replans, status }`. `goal.restore(snapshot)` validates it against the
+registry (unknown action ids, out-of-range steps, and a different `goalId`
+are rejected before anything changes) and resumes from the saved step on the
+next update. Restoring never calls game code: the in-flight step's Yuka goal
+is created fresh when the plan resumes, the same step-level granularity as
+`restoreFsmState`. `validateGoapPlanSnapshot(value)` validates without
+restoring.
 
 ### koota (separate entry: `@jbdevprimary/yuka-kit/koota`)
 
