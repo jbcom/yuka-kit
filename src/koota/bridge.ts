@@ -1,6 +1,8 @@
 import { getStateName } from '../fsm/createFsm.js';
 import { setDt } from '../fsm/dt.js';
-import { AIMemory, AIState, Intent } from './traits.js';
+import { AIAwareness, AIHearing, AIMemory, AIPerceptionMemory, AIState, Intent } from './traits.js';
+import type { HeardNoise } from '../perception/hearing.js';
+import type { PerceptionMemoryRecord } from '../perception/memory.js';
 import type { Entity, Trait } from 'koota';
 import type { Vehicle } from 'yuka';
 import type { AIVehicle, Vec3Like } from '../core/types.js';
@@ -79,6 +81,59 @@ export class AIBridge {
             lastSeenZ: position.z,
             lastSeenTime: time,
         });
+    }
+    /** Record a heard noise into the entity's AIHearing trait. */
+    rememberNoise(entity: Entity, heard: HeardNoise): void {
+        if (!entity.has(AIHearing))
+            return;
+        entity.set(AIHearing, {
+            lastHeardX: heard.event.position.x,
+            lastHeardY: heard.event.position.y,
+            lastHeardZ: heard.event.position.z,
+            lastHeardTime: heard.event.time,
+            lastHeardLoudness: heard.perceived,
+            lastHeardKind: heard.event.kind,
+        });
+    }
+    /**
+     * Mirror the entity's PerceptionMemory onto ECS traits at time `now`: the
+     * strongest record into AIAwareness, and that record's last sighting and
+     * last noise into AIMemory and AIHearing. Returns the record mirrored, or
+     * `null` (AIAwareness is then cleared). Traits the entity lacks are skipped.
+     */
+    syncPerceptionMemory(entity: Entity, now: number): PerceptionMemoryRecord | null {
+        const memory = entity.get(AIPerceptionMemory)?.memory;
+        if (!memory)
+            return null;
+        const strongest = memory.strongest(now);
+        if (entity.has(AIAwareness)) {
+            const known = strongest && memory.lastKnownPosition(strongest.targetId, now);
+            entity.set(AIAwareness, strongest && known
+                ? {
+                    targetId: strongest.targetId,
+                    confidence: strongest.confidence,
+                    x: known.position.x,
+                    y: known.position.y,
+                    z: known.position.z,
+                    time: known.time,
+                    sense: known.sense,
+                }
+                : { targetId: '', confidence: 0, x: 0, y: 0, z: 0, time: 0, sense: '' });
+        }
+        if (strongest?.lastSeen) {
+            this.rememberSighting(entity, strongest.lastSeen.position, strongest.lastSeen.time);
+        }
+        if (strongest?.lastHeard && entity.has(AIHearing)) {
+            entity.set(AIHearing, {
+                lastHeardX: strongest.lastHeard.position.x,
+                lastHeardY: strongest.lastHeard.position.y,
+                lastHeardZ: strongest.lastHeard.position.z,
+                lastHeardTime: strongest.lastHeard.time,
+                lastHeardLoudness: strongest.lastHeard.loudness,
+                lastHeardKind: strongest.lastHeard.kind,
+            });
+        }
+        return strongest;
     }
     /** Write the active goal name onto the entity's Intent trait. */
     writeIntent(entity: Entity, goal: string): void {

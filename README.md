@@ -175,6 +175,88 @@ cells start→end inclusive, `[]` when unreachable.
 - `applyPerception(seen, fsm, stateWhenSeen)` — the aethermoor raycast→FSM
   pattern: transition once on sighting.
 
+#### light-scaled vision
+
+Actors in darkness are harder to see. `lightScaledRange(light, { range,
+minRange?, exponent? })` maps a light level in `[0, 1]` to a vision range of
+`minRange + (range - minRange) * light ** exponent`. Two helpers compose it
+with the existing sensors:
+
+- `inLitVisionCone(origin, forward, target, { range, halfAngleRad, lightAt,
+  minRange?, exponent? })` — `inVisionCone` with the range taken from
+  `lightAt(target)`.
+- `createLitVisionSensor(raycast, { range, isTarget, lightAt, minRange?,
+  exponent? })` — `createVisionSensor` that casts toward a specific target
+  with the light-scaled range: `sensor.seesTarget(origin, target)` casts a
+  unit-length direction and skips the cast when the target is out of range;
+  `sensor.rangeFor(target)` exposes the range it would use. A co-located
+  target is always seen, as in `inVisionCone`.
+
+`lightAt` must return a finite number. Values outside `[0, 1]` are clamped, so
+a floodlight that reports `3` still means "fully lit". `minRange` covers
+senses that work in the dark, such as a dog that notices anything within two
+metres.
+
+#### hearing
+
+Noise is an event, not a ray. `NoiseEvent` is `{ position, loudness, kind,
+time, source? }`; `loudness` is the level at the reference distance.
+
+- `attenuateNoise(distance, options?)` — distance gain using the Web Audio
+  `PannerNode` distance models: `'inverse'` (default), `'linear'`, and
+  `'exponential'`, with `refDistance` (default `1`), `maxDistance` (default
+  `10000`, used by `'linear'`), and `rolloffFactor` (default `1`). An
+  `'exponential'` model with `rolloffFactor: 2` is the inverse-square law.
+- `perceiveNoise(listener, event, { threshold, ...distance options,
+  occlusion? })` — returns `{ event, perceived, distance, transmission }` when
+  `loudness × gain × transmission ≥ threshold`, else `null`. `occlusion(from,
+  to, event)` returns the fraction of sound that passes through walls, from `0`
+  (blocked) to `1` (clear). It is called only for noises that would be audible
+  without occlusion, so an expensive raycast is skipped for distant noises.
+- `createHearingSensor(options).hear(listener, events)` — every audible noise,
+  loudest first; ties break by most recent `time`, then `kind`, then `source`,
+  then input order, so the result is deterministic.
+- `NoiseBuffer({ ttl, capacity? })` — a world-owned list of recent noises:
+  `emit(event)`, `active(now)` (events with `now - ttl ≤ time ≤ now`), and
+  `prune(now)`. When full it drops the oldest event.
+
+Each listener has its own `threshold`, so a guard dog can hear what a digger
+misses.
+
+#### perception memory
+
+`AIMemory` (Koota) keeps one last-seen position. `PerceptionMemory` keeps a
+record per target and remembers both senses:
+
+```ts
+const memory = new PerceptionMemory({ halfLife: 8, forgetBelow: 0.05 });
+memory.recordSighting('mummy', mummy.position, now);           // confidence 1
+memory.recordNoise(heard); // targetId from heard.event.source, confidence 0.5
+const best = memory.strongest(now);    // highest decayed confidence
+const where = memory.lastKnownPosition('mummy', now); // newest of seen/heard
+```
+
+- `recordSighting(targetId, position, time, confidence = 1)` and
+  `recordNoise(heard, { targetId?, confidence? })` add evidence. A noise uses
+  its event's `time` and, unless `targetId` is given, its `source`; its default
+  confidence is the memory's `hearingConfidence` option (default `0.5`).
+- A record holds `lastSeen` (`position`, `time`), `lastHeard` (`position`,
+  `time`, `loudness`, `kind`), `lastSensedTime`, and `confidence`.
+- Confidence decays exponentially with `halfLife` seconds. It is computed on
+  read from the stored value, so reading never changes state. Sensing a
+  target again sets confidence to the larger of the decayed value and the new
+  one.
+- Records below `forgetBelow` are hidden from `get`, `recall`, and
+  `strongest`, and `prune(now)` deletes them. `capacity` (default `256`)
+  evicts the weakest record first.
+- Out-of-order events (a noise from earlier in the frame, after a sighting)
+  keep each field's newest value and never move time backwards.
+- `recall(now)` orders records by confidence, then recency, then `targetId`.
+- `memory.snapshot()` and `PerceptionMemory.restore(snapshot)` round-trip the
+  memory through JSON with the same closed, bounded validation as the other
+  snapshots. `validatePerceptionMemorySnapshot(value)` validates without
+  restoring.
+
 ### encounters
 
 `EncounterDirector` consumes monotonic player movement steps rather than frame
@@ -501,6 +583,21 @@ bridge.syncToKoota(vehicle, entity); // velocity + FSM state name back to koota
 instances, not POD — this is the load-bearing integration detail the package
 standardizes. `AIMemory` (last-seen position/time) and `Intent` (active goal
 name) have `rememberSighting`/`writeIntent` helpers on the bridge.
+
+Hearing and per-target memory have matching traits:
+
+- `AIHearing` — the last noise heard: position, time, perceived loudness, and
+  kind. Write it with `bridge.rememberNoise(entity, heard)`.
+- `AIPerceptionMemory` — a callback trait holding the entity's
+  `PerceptionMemory` instance.
+- `AIAwareness` — the strongest remembered target: `targetId`, `confidence`,
+  last known position and time, and `sense` (`'sight'`, `'hearing'`, or `''`).
+
+`bridge.syncPerceptionMemory(entity, now)` reads the entity's
+`PerceptionMemory`, writes the strongest record into `AIAwareness`, and keeps
+`AIMemory` and `AIHearing` in step with that record's last sighting and last
+noise. Render and animation systems read the traits; the memory stays the
+single source of truth.
 
 ## Development
 

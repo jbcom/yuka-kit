@@ -208,6 +208,98 @@ export function inVisionCone(
     // Clamp against float drift before comparing angles
     return Math.acos(Math.min(1, Math.max(-1, dot))) <= halfAngleRad;
 }
+export interface LightScaledRangeOptions {
+    /** Vision range in full light. */
+    range: number;
+    /** Vision range in total darkness (default 0). Must not exceed `range`. */
+    minRange?: number;
+    /** Curve applied to the light level before interpolating (default 1, linear). */
+    exponent?: number;
+}
+
+export interface LitVisionOptions extends LightScaledRangeOptions {
+    halfAngleRad: number;
+    /** Light level at a position, nominally in [0, 1]; values outside are clamped. */
+    lightAt: (target: Vec3Like) => number;
+}
+
+export interface LitVisionSensorOptions<Hit> extends LightScaledRangeOptions {
+    isTarget: (hit: Hit) => boolean;
+    lightAt: (target: Vec3Like) => number;
+}
+
+export interface LitVisionSensor {
+    /** True when a ray cast toward `target`, as long as the light-scaled range, hits it. */
+    seesTarget(origin: Vec3Like, target: Vec3Like): boolean;
+    /** The light-scaled range the sensor would use for `target`. */
+    rangeFor(target: Vec3Like): number;
+}
+
+function validateLightScaledRange(options: LightScaledRangeOptions): Required<LightScaledRangeOptions> {
+    const { range, minRange = 0, exponent = 1 } = options;
+    if (!Number.isFinite(range) || range < 0) throw new RangeError('Vision range must be finite and non-negative');
+    if (!Number.isFinite(minRange) || minRange < 0 || minRange > range) {
+        throw new RangeError('Vision minRange must be finite, non-negative, and no greater than range');
+    }
+    if (!Number.isFinite(exponent) || exponent <= 0) throw new RangeError('Vision exponent must be finite and positive');
+    return { range, minRange, exponent };
+}
+
+function readLight(lightAt: (target: Vec3Like) => number, target: Vec3Like): number {
+    const light = lightAt(target);
+    if (!Number.isFinite(light)) throw new TypeError(`lightAt must return a finite number; received ${String(light)}`);
+    return Math.min(1, Math.max(0, light));
+}
+
+/**
+ * Vision range for a target lit at `light`:
+ * `minRange + (range - minRange) * clamp(light, 0, 1) ** exponent`.
+ */
+export function lightScaledRange(light: number, options: LightScaledRangeOptions): number {
+    if (!Number.isFinite(light)) throw new TypeError(`Light level must be finite; received ${String(light)}`);
+    const { range, minRange, exponent } = validateLightScaledRange(options);
+    return minRange + (range - minRange) * Math.min(1, Math.max(0, light)) ** exponent;
+}
+
+/** `inVisionCone` with the range scaled by the light level at `target`. */
+export function inLitVisionCone(
+    origin: Vec3Like,
+    forward: Vec3Like,
+    target: Vec3Like,
+    options: LitVisionOptions,
+): boolean {
+    const range = lightScaledRange(readLight(options.lightAt, target), options);
+    return inVisionCone(origin, forward, target, range, options.halfAngleRad);
+}
+
+/**
+ * A raycast sensor whose range shrinks in darkness. Casts from `origin`
+ * toward a specific target; a target outside the light-scaled range is not
+ * seen even before the ray is cast.
+ */
+export function createLitVisionSensor<Hit>(
+    raycast: RaycastFn<Hit>,
+    options: LitVisionSensorOptions<Hit>,
+): LitVisionSensor {
+    validateLightScaledRange(options);
+    const rangeFor = (target: Vec3Like) => lightScaledRange(readLight(options.lightAt, target), options);
+    return {
+        rangeFor,
+        seesTarget(origin, target) {
+            const range = rangeFor(target);
+            const dx = target.x - origin.x;
+            const dy = target.y - origin.y;
+            const dz = target.z - origin.z;
+            const distance = Math.hypot(dx, dy, dz);
+            if (distance > range) return false;
+            if (distance === 0) return true; // co-located, matching inVisionCone
+            const direction = { x: dx / distance, y: dy / distance, z: dz / distance };
+            const hit = raycast(origin, direction, range);
+            return hit !== null && options.isTarget(hit);
+        },
+    };
+}
+
 /**
  * The perception → FSM pattern from aethermoor: when `seen` is true and the
  * FSM isn't already in `stateWhenSeen`, transition to it. Returns true when

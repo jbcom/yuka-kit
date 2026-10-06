@@ -19,6 +19,9 @@ game rule; the library intentionally avoids a single opaque AI controller.
 | Path following | `followWaypoints`, `clearDirectionalBehaviors` |
 | Grid navigation | `astar` |
 | Sight and projectile safety | `createVisionSensor`, `inVisionCone`, `hasAabbLineOfSight2D`, `hasAabbProjectileClearance2D` |
+| Sight that depends on light | `lightScaledRange`, `inLitVisionCone`, `createLitVisionSensor` |
+| Hearing | `createHearingSensor`, `perceiveNoise`, `attenuateNoise`, `NoiseBuffer`, `validateNoiseEvent` |
+| Per-target memory | `PerceptionMemory`, `validatePerceptionMemorySnapshot` |
 
 ## State and arbitration
 
