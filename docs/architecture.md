@@ -43,10 +43,21 @@ Only these package entry points are supported:
 
 ```ts
 import {} from '@jbdevprimary/yuka-kit';
+import {} from '@jbdevprimary/yuka-kit/goap';
 import {} from '@jbdevprimary/yuka-kit/koota';
 import {} from '@jbdevprimary/yuka-kit/solo';
 ```
 
-The root is framework-agnostic. Koota is optional; Solo is an adapter boundary
-for RPGJS command dispatch. Internal file paths and the package build layout
+The root is framework-agnostic. GOAP is a separate entry point so games that
+only arbitrate with evaluators never load the planner. Koota is optional; Solo
+is an adapter boundary for RPGJS command dispatch.
+
+## Perception and planning boundaries
+
+Perception helpers take callbacks for everything the world owns: `lightAt`
+for light levels, `occlusion` for how much sound passes through walls, and a
+raycast adapter for line of sight. They never read a scene graph. GOAP plans
+over a world-state record your `sense` function builds, and each action runs as
+a Yuka goal your `createGoal` factory supplies, so the planner decides the
+order of actions and your game decides what an action does. Internal file paths and the package build layout
 are intentionally not stable API.

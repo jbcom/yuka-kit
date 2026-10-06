@@ -32,7 +32,12 @@ serialize Yuka object graphs.
 
 - Steering and path-following helpers for `Vehicle` instances.
 - Combat FSM states and goal-driven tactical agents.
-- Grid A* pathfinding and physics-agnostic visibility helpers.
+- Grid A* pathfinding and physics-agnostic visibility helpers, including
+  light-scaled vision.
+- Hearing (noise events with distance attenuation and occlusion) and
+  per-target perception memory with confidence decay.
+- A deterministic GOAP planner whose plans run as Yuka goals chosen by
+  `Think` (`@jbdevprimary/yuka-kit/goap`).
 - Deterministic encounters, formations, seeded randomness, and NPC routines.
 - Closed-schema snapshot validation before restoration of package state.
 - Optional `koota` and RPGJS Solo bridge entry points.

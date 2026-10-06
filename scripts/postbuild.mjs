@@ -19,6 +19,7 @@ const prependReference = async (path, referencePath) => {
 
 await Promise.all([
   prependReference('index.d.ts', './yuka.d.ts'),
+  prependReference('goap/index.d.ts', '../yuka.d.ts'),
   prependReference('koota/index.d.ts', '../yuka.d.ts'),
   prependReference('solo/index.d.ts', '../yuka.d.ts'),
 ]);

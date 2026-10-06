@@ -16,6 +16,38 @@ describe('koota entry-point barrel', () => {
         expect(api.EnemyType).toBeDefined();
         expect(api.Intent).toBeDefined();
         expect(api.YukaRef).toBeDefined();
+        expect(api.AIHearing).toBeDefined();
+        expect(api.AIAwareness).toBeDefined();
+        expect(api.AIPerceptionMemory).toBeDefined();
+    });
+});
+
+describe('goap entry-point barrel', () => {
+    it('re-exports every documented GOAP symbol', async () => {
+        const api = await import('./goap/index.js');
+        for (const name of [
+            'planGoap', 'validateGoapAction', 'compareGoapIds', 'GoapActionRegistry', 'GoapPlanGoal',
+            'GoapGoalEvaluator', 'validateGoapPlanSnapshot', 'satisfiesGoapConditions', 'conditionHolds',
+            'countUnsatisfied', 'applyGoapEffects', 'goapStateKey',
+        ] as const) {
+            expect(typeof api[name], name).toBe('function');
+        }
+        expect(api.DEFAULT_GOAP_MAX_EXPANSIONS).toBe(2048);
+        expect(api.DEFAULT_GOAP_MAX_REPLANS).toBe(3);
+        expect(api.GOAP_PLAN_SNAPSHOT_STEP_LIMIT).toBe(1024);
+    });
+});
+
+describe('root perception exports', () => {
+    it('re-exports hearing, memory, and light-scaled vision', async () => {
+        const api = await import('./index.js');
+        for (const name of [
+            'attenuateNoise', 'createHearingSensor', 'perceiveNoise', 'validateNoiseEvent', 'NoiseBuffer',
+            'PerceptionMemory', 'validatePerceptionMemorySnapshot', 'lightScaledRange', 'inLitVisionCone',
+            'createLitVisionSensor',
+        ] as const) {
+            expect(typeof api[name], name).toBe('function');
+        }
     });
 });
 

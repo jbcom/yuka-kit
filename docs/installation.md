@@ -20,9 +20,10 @@ optional Koota bridge:
 pnpm add koota
 ```
 
-Import from the root entry point for engine-agnostic modules, or from
+Import from the root entry point for engine-agnostic modules, from
+`@jbdevprimary/yuka-kit/goap` for goal-oriented action planning, or from
 `@jbdevprimary/yuka-kit/koota` and `@jbdevprimary/yuka-kit/solo` for those
-optional integrations. Do not import internal `src/` paths: only the three
+optional integrations. Do not import internal `src/` paths: only the four
 documented package exports are public contracts.
 
 ```ts
