@@ -113,6 +113,23 @@ describe('PerceptionMemory', () => {
         expect(memory.recall(0).map(({ targetId }) => targetId)).toEqual(['strong', 'new', 'newer']);
     });
 
+    it('ranks for eviction independently of when out-of-order evidence arrives', () => {
+        // Measured at t=0 (the late event's time), A looks weakest; at any
+        // common later time the late, old sighting C is weakest by far.
+        const memory = new PerceptionMemory({ halfLife: 1, capacity: 2, forgetBelow: 0 });
+        memory.recordSighting('A', at(0), 10, 0.1);
+        memory.recordSighting('B', at(0), 5, 0.5);
+        memory.recordSighting('C', at(0), 0, 1);
+        expect(memory.recall(10).map(({ targetId }) => targetId)).toEqual(['A', 'B']);
+    });
+
+    it('evicts zero-confidence evidence first', () => {
+        const memory = new PerceptionMemory({ halfLife: 1, capacity: 1, forgetBelow: 0 });
+        memory.recordSighting('zero', at(0), 5, 0);
+        memory.recordSighting('real', at(0), 0, 0.01);
+        expect(memory.recall(5).map(({ targetId }) => targetId)).toEqual(['real']);
+    });
+
     it('validates evidence before changing anything', () => {
         const memory = new PerceptionMemory({ halfLife: 10 });
         expect(() => memory.recordSighting('', at(0), 0)).toThrow(/targetId/);

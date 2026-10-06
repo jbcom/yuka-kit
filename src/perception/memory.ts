@@ -274,23 +274,38 @@ export class PerceptionMemory {
         const record: StoredRecord = { targetId, lastSeen: null, lastHeard: null, lastSensedTime: time, confidence };
         apply(record);
         this.#records.set(targetId, record);
-        if (this.#records.size > this.#options.capacity) this.#evictWeakest(time);
+        if (this.#records.size > this.#options.capacity) this.#evictWeakest();
     }
 
-    #evictWeakest(now: number): void {
+    /**
+     * Time-invariant strength: log2 of the confidence the record would have at
+     * time 0 if decay ran backwards. Exponential decay preserves the order of
+     * these values at every time after all records, so eviction never depends
+     * on which evidence arrived last (a late, old event must not be compared
+     * at its own past time while newer records are measured undecayed).
+     */
+    #strength(stored: StoredRecord): number {
+        return stored.confidence === 0
+            ? Number.NEGATIVE_INFINITY
+            : Math.log2(stored.confidence) + stored.lastSensedTime / this.#options.halfLife;
+    }
+
+    #evictWeakest(): void {
         let weakest: StoredRecord | null = null;
-        let weakestConfidence = Number.POSITIVE_INFINITY;
         for (const stored of this.#records.values()) {
-            const confidence = this.#decayed(stored, now);
+            if (weakest === null) {
+                weakest = stored;
+                continue;
+            }
+            const difference = this.#strength(stored) - this.#strength(weakest);
             if (
-                confidence < weakestConfidence
-                || (confidence === weakestConfidence && weakest !== null && (
+                difference < 0
+                || (difference === 0 && (
                     stored.lastSensedTime < weakest.lastSensedTime
                     || (stored.lastSensedTime === weakest.lastSensedTime && compareText(stored.targetId, weakest.targetId) < 0)
                 ))
             ) {
                 weakest = stored;
-                weakestConfidence = confidence;
             }
         }
         this.#records.delete((weakest as StoredRecord).targetId);
