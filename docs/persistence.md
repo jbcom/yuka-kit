@@ -16,9 +16,8 @@ director.restore(snapshot);
 ```
 
 The package uses closed schemas for encounter, routine, FSM, perception
-memory, and GOAP plan snapshots. A GOAP plan snapshot stores action ids, so
-restore it into a `GoapPlanGoal` built with a registry that still holds those
-actions; unknown ids are rejected before anything changes.
-Their retained collections are bounded to protect the running game from
-unbounded data. Persist only the returned snapshot objects; do not serialize
+memory, and GOAP plan snapshots. Their retained collections are bounded to
+protect the running game from unbounded data. A GOAP plan snapshot stores
+action ids, so restore it into a `GoapPlanGoal` built with a registry that
+still holds those actions; unknown ids are rejected before anything changes. Persist only the returned snapshot objects; do not serialize
 Yuka class instances directly.

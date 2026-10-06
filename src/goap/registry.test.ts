@@ -63,6 +63,16 @@ describe('GoapActionRegistry', () => {
         expect(registry.get('walk')).toBe(replacement);
     });
 
+    it('binds an undo to its registration, not to a reused definition object', () => {
+        const registry = new GoapActionRegistry<Agent>();
+        const pulse = define('emit-pulse');
+        const unequipOld = registry.contribute('item:sun-staff', [pulse]);
+        registry.revoke('item:sun-staff');
+        registry.contribute('item:sun-staff', [pulse]); // re-equipped
+        unequipOld(); // delayed cleanup from the earlier equip
+        expect(registry.get('emit-pulse')).toBe(pulse);
+    });
+
     it('filters actions by isAvailable for the owner', () => {
         const registry = new GoapActionRegistry<Agent>();
         registry.register(define('swim', { isAvailable: (owner) => owner.canSwim }));

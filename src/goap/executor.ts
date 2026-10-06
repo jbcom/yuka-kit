@@ -266,6 +266,7 @@ export class GoapPlanGoal<Owner extends GameEntity = GameEntity> extends Composi
     #fail(failure: GoapPlanFailure): void {
         this.clearSubgoals();
         this.#plan = null;
+        this.#step = 0; // keep snapshot() of a failed goal valid: no plan, no step
         this.#lastFailure = failure;
         this.status = Goal.STATUS.FAILED;
     }
@@ -337,7 +338,11 @@ export class GoapGoalEvaluator<Owner extends GameEntity = GameEntity> extends Go
         if (!Number.isFinite(raw)) {
             throw new TypeError(`GOAP desirability for ${this.goalId} must be finite; received ${String(raw)}`);
         }
-        if (raw <= 0 || this.#options.requirePlan === false || this.#running(agent)) return raw;
+        // Think.arbitrate multiplies by characterBias itself; a zero bias means
+        // this goal can never win, so skip planning for it as for a zero score.
+        if (raw <= 0 || this.characterBias <= 0 || this.#options.requirePlan === false || this.#running(agent)) {
+            return raw;
+        }
         const result = planFor(agent, this.#options);
         if (!result.found) return 0;
         this.#pending = { owner: agent, plan: result.actions };

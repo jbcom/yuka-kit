@@ -29,6 +29,18 @@ describe('PerceptionMemory', () => {
         expect(memory.size).toBe(2);
     });
 
+    it('returns evidence detached from its stored state', () => {
+        const memory = new PerceptionMemory({ halfLife: 10 });
+        memory.recordSighting('mummy', at(1), 0);
+        memory.recordNoise(heard(2, 0));
+        const record = memory.get('mummy', 0);
+        (record?.lastSeen?.position as { x: number }).x = 99;
+        (record?.lastHeard?.position as { x: number }).x = 99;
+        expect(memory.get('mummy', 0)?.lastSeen?.position).toEqual(at(1));
+        expect(memory.lastKnownPosition('mummy', 0)?.position).toEqual(at(1));
+        expect(memory.snapshot().records[0]?.lastHeard?.position).toEqual(at(2));
+    });
+
     it('never changes state when read', () => {
         const memory = new PerceptionMemory({ halfLife: 1 });
         memory.recordSighting('mummy', at(1), 0);
@@ -194,8 +206,9 @@ describe('PerceptionMemory persistence', () => {
             [{ ...good, records: [record, record, record] }, /maximum supported length of 2/],
             [{ ...good, records: [{ ...record, lastSeen: null, lastHeard: null }] }, /sighting or a noise/],
             [{ ...good, records: [{ ...record, confidence: 2 }] }, /confidence/],
-            [{ ...good, records: [{ ...record, lastSensedTime: -5 }] }, /must not precede/],
-            [{ ...good, records: [{ ...record, lastHeard: { position: at(0), time: 9, loudness: 1, kind: 'x' } }] }, /must not precede/],
+            [{ ...good, records: [{ ...record, lastSensedTime: -5 }] }, /must equal its newest evidence time/],
+            [{ ...good, records: [{ ...record, lastSensedTime: 1e9 }] }, /must equal its newest evidence time/],
+            [{ ...good, records: [{ ...record, lastHeard: { position: at(0), time: 9, loudness: 1, kind: 'x' } }] }, /must equal its newest evidence time/],
             [{ ...good, records: [{ ...record, lastHeard: { position: at(0), time: 0, loudness: 1, kind: '' } }] }, /kind/],
             [{ ...good, records: [{ ...record, lastSeen: { position: { x: 0, y: 0 }, time: 0 } }] }, /missing field: z/],
             [{ ...good, records: [{ ...record, lastSeen: { position: at(0), time: 0, extra: 1 } }] }, /unknown field: extra/],

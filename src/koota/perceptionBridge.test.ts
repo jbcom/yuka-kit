@@ -77,6 +77,14 @@ describe('AIBridge.syncPerceptionMemory', () => {
 
         const empty = world().spawn(AIPerceptionMemory, AIAwareness);
         expect(bridge.syncPerceptionMemory(empty, 0)).toBeNull();
+
+        // Dropping the memory clears a previously mirrored target.
+        const stale = world().spawn(AIPerceptionMemory({ memory }), AIAwareness);
+        bridge.syncPerceptionMemory(stale, 0);
+        expect(stale.get(AIAwareness)?.targetId).toBe('mummy');
+        stale.set(AIPerceptionMemory, { memory: null });
+        expect(bridge.syncPerceptionMemory(stale, 0)).toBeNull();
+        expect(stale.get(AIAwareness)?.targetId).toBe('');
         const none = world().spawn(Position);
         expect(bridge.syncPerceptionMemory(none, 0)).toBeNull();
     });

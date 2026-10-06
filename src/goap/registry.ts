@@ -65,13 +65,17 @@ export class GoapActionRegistry<Owner extends GameEntity = GameEntity> {
             }
             incoming.add(definition.id);
         }
-        for (const definition of definitions) {
-            this.#actions.set(definition.id, { definition, source });
+        // The undo is bound to these registration entries, not to the reusable
+        // definition objects, so a stale undo can never remove a later
+        // registration of the same definition (for example, re-equipping).
+        const entries = definitions.map((definition) => ({ definition, source }));
+        for (const entry of entries) {
+            this.#actions.set(entry.definition.id, entry);
         }
         return () => {
-            for (const definition of definitions) {
-                if (this.#actions.get(definition.id)?.definition === definition) {
-                    this.#actions.delete(definition.id);
+            for (const entry of entries) {
+                if (this.#actions.get(entry.definition.id) === entry) {
+                    this.#actions.delete(entry.definition.id);
                 }
             }
         };

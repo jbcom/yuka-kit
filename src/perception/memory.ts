@@ -249,10 +249,12 @@ export class PerceptionMemory {
     }
 
     #view(stored: StoredRecord, now: number): PerceptionMemoryRecord {
+        // Detached copies: a caller writing through a returned position must
+        // never change what the memory recalls or snapshots later.
         return {
             targetId: stored.targetId,
-            lastSeen: stored.lastSeen,
-            lastHeard: stored.lastHeard,
+            lastSeen: stored.lastSeen && { ...stored.lastSeen, position: { ...stored.lastSeen.position } },
+            lastHeard: stored.lastHeard && { ...stored.lastHeard, position: { ...stored.lastHeard.position } },
             lastSensedTime: stored.lastSensedTime,
             confidence: this.#decayed(stored, now),
         };
@@ -368,8 +370,10 @@ export function validatePerceptionMemorySnapshot(snapshot: unknown): PerceptionM
             })();
             if (!lastSeen && !lastHeard) throw new TypeError(`${label} must hold a sighting or a noise`);
             const lastSensedTime = requireFinite(fields.lastSensedTime, `${label}.lastSensedTime`);
-            if ((lastSeen && lastSeen.time > lastSensedTime) || (lastHeard && lastHeard.time > lastSensedTime)) {
-                throw new TypeError(`${label}.lastSensedTime must not precede its evidence`);
+            const newestEvidence = Math.max(lastSeen?.time ?? Number.NEGATIVE_INFINITY, lastHeard?.time ?? Number.NEGATIVE_INFINITY);
+            if (lastSensedTime !== newestEvidence) {
+                // A future lastSensedTime would freeze decay; a past one would precede the evidence.
+                throw new TypeError(`${label}.lastSensedTime must equal its newest evidence time`);
             }
             return {
                 targetId,

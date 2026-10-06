@@ -102,12 +102,12 @@ export class AIBridge {
      * `null` (AIAwareness is then cleared). Traits the entity lacks are skipped.
      */
     syncPerceptionMemory(entity: Entity, now: number): PerceptionMemoryRecord | null {
-        const memory = entity.get(AIPerceptionMemory)?.memory;
-        if (!memory)
-            return null;
-        const strongest = memory.strongest(now);
+        // A missing or cleared memory still clears AIAwareness, so a stale
+        // target never outlives the memory that produced it.
+        const memory = entity.get(AIPerceptionMemory)?.memory ?? null;
+        const strongest = memory?.strongest(now) ?? null;
         if (entity.has(AIAwareness)) {
-            const known = strongest && memory.lastKnownPosition(strongest.targetId, now);
+            const known = strongest && memory?.lastKnownPosition(strongest.targetId, now);
             entity.set(AIAwareness, strongest && known
                 ? {
                     targetId: strongest.targetId,

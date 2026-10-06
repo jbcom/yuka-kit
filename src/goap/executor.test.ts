@@ -185,6 +185,18 @@ describe('GoapPlanGoal', () => {
         expect(failing.lastFailure).toEqual({ reason: 'replan-limit', expanded: 0 });
         expect(failing.plan).toEqual([]);
         expect(failing.hasSubgoals()).toBe(false);
+
+        // A goal that failed after advancing past step 0 still produces a valid snapshot.
+        const advanced = new GoapPlanGoal(
+            Object.assign(new Companion(), { facts: startFacts() }),
+            options(claimRegistry({ claim: { outcomes: ['fail'] } }), { maxReplans: 0 }),
+        );
+        runUntilSettled(advanced);
+        expect(advanced.failed()).toBe(true);
+        expect(advanced.step).toBe(0);
+        expect(validateGoapPlanSnapshot(JSON.parse(JSON.stringify(advanced.snapshot())))).toMatchObject({
+            plan: [], step: 0, status: 'failed',
+        });
     });
 
     it('replans when the goal still does not hold after the last step', () => {
@@ -417,6 +429,16 @@ describe('GoapGoalEvaluator with Think', () => {
         });
         expect(evaluator.characterBias).toBe(0.5);
         expect(evaluator.calculateDesirability(owner)).toBe(0);
+        expect(planned).toBe(0);
+
+        const unbiased = evaluatorFor(claimRegistry(), {
+            characterBias: 0,
+            sense: (agent: Companion) => {
+                planned += 1;
+                return { ...agent.facts };
+            },
+        });
+        expect(unbiased.calculateDesirability(owner)).toBe(0.8);
         expect(planned).toBe(0);
     });
 
