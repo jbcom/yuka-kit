@@ -145,15 +145,20 @@ export class GoapPlanGoal<Owner extends GameEntity = GameEntity> extends Composi
         subgoal.activateIfInactive();
         subgoal.execute();
         if (subgoal.completed()) {
-            subgoal.terminate();
-            this.removeSubgoal(subgoal);
+            this.#retire(subgoal);
             this.#step += 1;
             this.#beginStep();
         } else if (subgoal.failed()) {
-            subgoal.terminate();
-            this.removeSubgoal(subgoal);
+            this.#retire(subgoal);
             this.#replan();
         }
+    }
+
+    /** Retire a finished step goal exactly as Yuka's executeSubgoals does. */
+    #retire(subgoal: Goal): void {
+        if (subgoal instanceof CompositeGoal) subgoal.clearSubgoals();
+        subgoal.terminate();
+        this.removeSubgoal(subgoal);
     }
 
     terminate(): void {
@@ -176,8 +181,10 @@ export class GoapPlanGoal<Owner extends GameEntity = GameEntity> extends Composi
     /**
      * Restore validated progress. Rejects a different `goalId`, unknown action
      * ids, an out-of-range step, or too many replans before changing anything.
-     * Never calls game code: an active plan resumes at its saved step, with a
-     * fresh Yuka goal for that step, on the next update.
+     * The only game code it runs is `terminate()` on a step goal already in
+     * flight; it never calls `sense`, `createGoal`, or `isAvailable`. An active
+     * plan resumes at its saved step, with a fresh Yuka goal for that step, on
+     * the next update.
      */
     restore(snapshot: unknown): void {
         const validated = validateGoapPlanSnapshot(snapshot);
@@ -235,7 +242,12 @@ export class GoapPlanGoal<Owner extends GameEntity = GameEntity> extends Composi
             return;
         }
         const action = plan[this.#step] as GoapActionDefinition<Owner>;
-        if (!satisfiesGoapConditions(state, action.preconditions) || !(action.isAvailable?.(owner) ?? true)) {
+        const stillRegistered = this.#options.registry.get(action.id) === action;
+        if (
+            !stillRegistered
+            || !satisfiesGoapConditions(state, action.preconditions)
+            || !(action.isAvailable?.(owner) ?? true)
+        ) {
             this.#replan();
             return;
         }

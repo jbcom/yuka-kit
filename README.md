@@ -644,8 +644,9 @@ order.
 **`GoapPlanGoal<Owner>`** is a Yuka `CompositeGoal` that plans on activation
 and runs the plan as one subgoal per action:
 
-- Before each step it senses the world again and checks the step's
-  preconditions and `isAvailable`. If they no longer hold, or the step's goal
+- Before each step it senses the world again and checks that the step's
+  action is still registered (an unequipped item's actions stop at once), its
+  preconditions, and `isAvailable`. If they no longer hold, or the step's goal
   fails, it replans from the current state, up to `maxReplans` (default `3`)
   times, and then fails.
 - When the last step completes, it checks the goal against the sensed state.
@@ -668,9 +669,10 @@ it. The evaluator finds the brain through the `_brain` tag set by
 replans, status }`. `goal.restore(snapshot)` validates it against the
 registry (unknown action ids, out-of-range steps, and a different `goalId`
 are rejected before anything changes) and resumes from the saved step on the
-next update. Restoring never calls game code: the in-flight step's Yuka goal
-is created fresh when the plan resumes, the same step-level granularity as
-`restoreFsmState`. `validateGoapPlanSnapshot(value)` validates without
+next update. Restoring calls `terminate()` on a step goal that is already in
+flight and no other game code (`sense`, `createGoal`, and `isAvailable` wait
+until the plan resumes). The step's Yuka goal is created fresh when the plan
+resumes, the same step-level granularity as `restoreFsmState`. `validateGoapPlanSnapshot(value)` validates without
 restoring.
 
 ### koota (separate entry: `@jbdevprimary/yuka-kit/koota`)

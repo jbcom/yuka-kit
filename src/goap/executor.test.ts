@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GameEntity, Goal, Think } from 'yuka';
+import { CompositeGoal, GameEntity, Goal, Think } from 'yuka';
 import { createBrain } from '../goals/BrainRegistry.js';
 import { WanderEvaluator } from '../goals/evaluators.js';
 import {
@@ -223,6 +223,47 @@ describe('GoapPlanGoal', () => {
         const fresh = new GoapPlanGoal(Object.assign(new Companion(), { facts: startFacts() }), options(registry));
         fresh.execute();
         expect(fresh.plan).toEqual(['approach', 'extinguish', 'claim']);
+    });
+
+    it('never runs an action whose source was revoked mid-plan', () => {
+        const registry = claimRegistry({
+            approach: { onComplete: () => { registry.revoke('item:sun-staff'); } },
+        });
+        // The first plan is approach → emit-pulse → claim; approaching unequips the staff.
+        registry.contribute('item:sun-staff', [step('emit-pulse', 0.5, { near: true }, { torchLit: false })]);
+        const owner = Object.assign(new Companion(), { facts: startFacts() });
+        const goal = new GoapPlanGoal(owner, options(registry));
+        goal.execute();
+        expect(goal.replans).toBe(1);
+        expect(goal.plan).toEqual(['extinguish', 'claim']);
+        runUntilSettled(goal);
+        expect(goal.completed()).toBe(true);
+        expect(owner.created).not.toContain('emit-pulse');
+        expect(owner.log).toEqual(['approach', 'extinguish', 'claim']);
+        expect(goal.replans).toBe(1);
+    });
+
+    it('clears a composite step goal before retiring it, as Yuka does', () => {
+        const cleared: string[] = [];
+        class CompositeStep extends CompositeGoal {
+            execute(): void {
+                const owner = this.owner as Companion;
+                Object.assign(owner.facts, { near: true });
+                owner.log.push('approach');
+                this.status = Goal.STATUS.COMPLETED;
+            }
+            clearSubgoals(): this {
+                cleared.push('approach');
+                return super.clearSubgoals();
+            }
+        }
+        const registry = new GoapActionRegistry<Companion>();
+        registry.register({ id: 'approach', cost: 1, preconditions: {}, effects: { near: true }, createGoal: (owner) => new CompositeStep(owner) });
+        const owner = Object.assign(new Companion(), { facts: { near: false } });
+        const goal = new GoapPlanGoal(owner, { goalId: 'near', goal: { near: true }, registry, sense: (agent) => ({ ...agent.facts }) });
+        runUntilSettled(goal);
+        expect(goal.completed()).toBe(true);
+        expect(cleared).toEqual(['approach']);
     });
 
     it('rejects invalid options', () => {
