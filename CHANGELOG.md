@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.21.0](https://github.com/jbcom/yuka-kit/compare/0.20.2...0.21.0) (2026-10-06)
+
+
+### Features
+
+* add GOAP planning, hearing, perception memory, and light-scaled vision ([e97c255](https://github.com/jbcom/yuka-kit/commit/e97c255b4a16c3a28f91941c1ac1d0a8e61c16fd))
+* add hearing, per-target perception memory, and light-scaled vision ([bb048db](https://github.com/jbcom/yuka-kit/commit/bb048dbdc3cb37a9e41f09f6cc1f928ddc970a13))
+* add the goap entry point with a deterministic planner and Yuka executor ([bcc9134](https://github.com/jbcom/yuka-kit/commit/bcc913447ad087d8bea0e6117569b9b5915b9e8a))
+
+
+### Bug Fixes
+
+* harden GOAP failure snapshots, registry undo, and perception memory reads ([c406acc](https://github.com/jbcom/yuka-kit/commit/c406acc70c5bb42db6f4d17e740aae5dd498da36))
+* rank perception-memory eviction independently of evidence arrival order ([c58e0db](https://github.com/jbcom/yuka-kit/commit/c58e0db3e1484347a0c6f185ba96cb690b3df3a1))
+* stop GOAP plans from running revoked actions and retire composite steps fully ([48ff633](https://github.com/jbcom/yuka-kit/commit/48ff6333d7b62ccb487f1b9861afa0d58d8669b7))
+
 ## [0.20.2](https://github.com/jbcom/yuka-kit/compare/0.20.1...0.20.2) (2026-08-24)
 
 
