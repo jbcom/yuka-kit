@@ -1,9 +1,9 @@
-# Migrating to `yuka-kit`
+# Migrating from `@jbdevprimary/yuka-kit` to `yuka-kit`
 
-`yuka-kit` is the one maintained home of this toolkit. Three earlier package
-names resolve to it, and the API did not change shape: every export of the
-earlier packages exists under the same name on the same entry point. Migration
-is a rename of the import specifier and the dependency.
+`yuka-kit` is the maintained public package name for this toolkit.
+The previous public package, `@jbdevprimary/yuka-kit`, is deprecated on npm
+with a pointer to `yuka-kit`. Update the dependency and import specifiers;
+the entry points and named exports stay the same.
 
 ## Import mapping
 
@@ -13,68 +13,42 @@ is a rename of the import specifier and the dependency.
 | `@jbdevprimary/yuka-kit/goap` | `yuka-kit/goap` |
 | `@jbdevprimary/yuka-kit/koota` | `yuka-kit/koota` |
 | `@jbdevprimary/yuka-kit/solo` | `yuka-kit/solo` |
+| `@jbdevprimary/yuka-kit/package.json` | `yuka-kit/package.json` |
 
-For earlier private installations, replace the package name with `yuka-kit`
-and preserve the entry-point suffix (`/koota`, `/solo` or `/package.json`).
-Named imports stay exactly as they are. For example:
+Replace the package name while keeping the entry-point suffix and named imports.
+The same mapping applies to CommonJS `require()` calls. For example:
 
 ```ts
 import { createVehicle, EncounterDirector, type EncounterTableEntry } from 'yuka-kit';
 import { SoloCommandAdapter } from 'yuka-kit/solo';
 ```
 
-### Coverage of the earlier `ai-yuka` 0.19 line
-
-| Entry point | Runtime exports | Status |
-| --- | --- | --- |
-| `.` | 84 | all present in `yuka-kit`, same names |
-| `./koota` | 7 | all present in `yuka-kit/koota`, same names |
-| `./solo` | 9 | all present in `yuka-kit/solo`, same names |
-
-The exported TypeScript types match too: comparing the built declaration
-barrels of both packages found no type missing from `yuka-kit`.
-`src/migration-surface.test.ts` freezes the runtime export names and fails if
-one disappears. The earlier package's own test suite (11 files, 104 tests) also
-runs green against this package's source.
-
 ## Steps
 
-1. Replace the dependency: remove the earlier package and run
-   `pnpm add yuka-kit yuka` (`yuka` is an exact peer; add `koota` only for the
-   `yuka-kit/koota` entry point).
+1. Replace the dependency:
+
+   ```sh
+   pnpm remove @jbdevprimary/yuka-kit
+   pnpm add yuka-kit yuka@0.7.8
+   ```
+
+   If you use `yuka-kit/koota`, also run `pnpm add koota@0.6.6` for its
+   optional peer. Commit the updated dependency manifest and lockfile together.
 2. Rewrite import specifiers with the table above (a find-and-replace on the
    package name is sufficient).
-3. If the project configured the earlier scope on a private registry (a
-   scoped `.npmrc` line, a lockfile registry override), remove it: `yuka-kit`
-   installs from the public npm registry.
+3. Install from the public npm registry, where `yuka-kit` is available.
 4. Update any bundler rule that names the earlier package, for example a
    manual-chunk pattern becomes `node_modules/yuka-kit/`.
-5. Delete any local `declare module 'yuka'` shim that only existed to cover
-   gaps in the earlier declarations; `yuka-kit` ships a merged ambient
-   declaration.
-6. Persisted data needs no migration. Snapshot `schema` tags such as
-   `arcade-ai-yuka-encounters` and the deterministic identity prefix are wire
-   identifiers that did not change, so saves written by any earlier release
-   still validate. Do not rewrite them.
-
-## What `yuka-kit` adds
-
-Code on the earlier `ai-yuka` line gains these without any change:
-
-- `yuka-kit/goap`: a deterministic goal-oriented action planner, an action
-  registry, and an executor that runs plans as Yuka goals.
-- Hearing: `createHearingSensor`, `NoiseBuffer`, `perceiveNoise`,
-  `attenuateNoise`, `validateNoiseEvent`.
-- Light-scaled vision: `lightScaledRange`, `inLitVisionCone`,
-  `createLitVisionSensor`.
-- Per-target perception memory: `PerceptionMemory` and
-  `validatePerceptionMemorySnapshot`.
-- Koota traits `AIHearing`, `AIAwareness`, `AIPerceptionMemory`, and the
-  `AIBridge` methods `rememberNoise` and `syncPerceptionMemory`.
+5. Update module aliases and filesystem snapshot paths that contain the old
+   dependency directory. For example,
+   `node_modules/@jbdevprimary/yuka-kit/` becomes `node_modules/yuka-kit/`.
+6. Persisted data needs no migration for the package rename. Snapshot schema
+   tags and deterministic identity prefixes are unchanged. Keep existing save
+   tags and snapshot contents unchanged; updating a filesystem path does not
+   require rewriting saved data.
+7. Run your project's typecheck and tests against `yuka-kit`.
 
 ## Versions
 
-`yuka-kit` continues the version line of `@jbdevprimary/yuka-kit`. The first
-`yuka-kit` release is the name change; every version of the earlier names is
-deprecated with a pointer here and none is unpublished, so existing lockfiles
-keep installing while they migrate.
+Deprecation does not remove `@jbdevprimary/yuka-kit` from npm. Existing
+lockfiles can still install the previous public package while projects migrate.
