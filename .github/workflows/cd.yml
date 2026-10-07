@@ -49,30 +49,46 @@ jobs:
   publish:
     if: github.event.workflow_run.name == 'Release' && github.event.workflow_run.conclusion == 'success'
     concurrency:
-      group: npm-publish-${{ github.event.workflow_run.head_sha }}
+      group: npm-publish-${{ github.event.workflow_run.id }}
       cancel-in-progress: false
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      actions: read
       id-token: write
     steps:
       - id: release
-        name: Find a release created from this trusted main commit
+        name: Read the release created by the trusted Release run
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
-          tag="$(gh api "repos/$REPOSITORY/releases" --paginate --jq ".[] | select(.target_commitish == \"$HEAD_SHA\") | .tag_name" | head -n 1)"
-          if [ -z "$tag" ]; then
+          artifact="$(gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/artifacts" --jq '.artifacts[] | select(.name == "npm-release" and .expired == false) | .id')"
+          if [ -z "$artifact" ]; then
             echo "::notice::No release was created for this commit; skipping npm publication."
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          gh run download "$RUN_ID" --repo "$REPOSITORY" --name npm-release --dir "$RUNNER_TEMP/npm-release"
+          node --input-type=module <<'NODE'
+          import { appendFileSync, readFileSync } from 'node:fs';
+          const { RUNNER_TEMP, GITHUB_OUTPUT } = process.env;
+          const { tag, sha } = JSON.parse(readFileSync(`${RUNNER_TEMP}/npm-release/npm-release.json`, 'utf8'));
+          if (!/^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(tag) ||
+              !/^[0-9a-f]{40}$/.test(sha)) throw new Error('Invalid trusted release metadata');
+          appendFileSync(GITHUB_OUTPUT, `tag=${tag}\nsha=${sha}\n`);
+          NODE
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: steps.release.outputs.tag != ''
         with:
           persist-credentials: false
           ref: ${{ steps.release.outputs.tag }}
+      - name: Require the exact commit reported by release-please
+        if: steps.release.outputs.tag != ''
+        env:
+          EXPECTED_RELEASE_SHA: ${{ steps.release.outputs.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_RELEASE_SHA"
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         if: steps.release.outputs.tag != ''
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0

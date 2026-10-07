@@ -32,3 +32,21 @@ jobs:
           # pull requests created with GITHUB_TOKEN, leaving a release PR
           # without the checks that protect main.
           token: ${{ secrets.CI_GITHUB_TOKEN }}
+      - name: Record the release created by this run
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { writeFileSync } from 'node:fs';
+          const { RELEASE_TAG: tag, RELEASE_SHA: sha, RUNNER_TEMP } = process.env;
+          writeFileSync(`${RUNNER_TEMP}/npm-release.json`, JSON.stringify({ tag, sha }));
+          NODE
+      - name: Hand the created release to CD
+        if: steps.release.outputs.release_created == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: npm-release
+          path: ${{ runner.temp }}/npm-release.json
+          if-no-files-found: error

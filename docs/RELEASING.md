@@ -12,9 +12,11 @@ npm trusted publishing (OIDC) with provenance. No npm token is used.
 2. `release.yml` runs release-please only. It proposes the version, manifest
    and changelog update. After that PR merges, it creates the GitHub release
    and version tag. Tags omit a `v`.
-3. `cd.yml` receives completion of the trusted Release workflow on `main`.
-   It resolves a release whose target is that run's commit and checks out its
-   exact tag. Without a matching release it skips publication.
+3. Release records the created tag and tagged SHA in a small run artifact.
+   `cd.yml` receives completion of the trusted Release workflow on `main`,
+   reads that artifact from the exact run, checks out its tag and verifies
+   the tagged SHA. The release commit can predate the run that created it.
+   A run without a created-release artifact skips publication visibly.
 4. The publish job installs with a frozen lockfile and runs `pnpm verify`.
    It checks the public registry and skips a version that already exists,
    verifying its identity and artifact integrity. An E404 for the version

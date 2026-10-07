@@ -53,6 +53,10 @@ export const validateReleaseWorkflows = ({ ci, release, publish }) => {
   forbidText(release, 'npm publish', 'publication from release-please');
   forbidText(release, 'pnpm publish', 'publication from release-please');
   forbidText(release, 'workflow_dispatch:\n  inputs:', 'hand-entered release input');
+  requireText(release, "if: steps.release.outputs.release_created == 'true'", 'record only a created release');
+  requireText(release, 'RELEASE_TAG: ${{ steps.release.outputs.tag_name }}', 'actual created tag handoff');
+  requireText(release, 'RELEASE_SHA: ${{ steps.release.outputs.sha }}', 'actual tagged SHA handoff');
+  requireText(release, 'actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02', 'SHA-pinned release metadata upload');
 
   requireText(publish, 'workflows: [CI, Release]', 'trusted workflow completion trigger');
   requireText(publish, 'branches: [main]', 'trusted main branch');
@@ -60,13 +64,17 @@ export const validateReleaseWorkflows = ({ ci, release, publish }) => {
   requireText(publish, 'github.event.workflow_run.head_repository.full_name == github.repository', 'Pages only from this repository');
   forbidText(publish, '\nconcurrency:', 'shared workflow concurrency queue');
   const publishJob = publish.slice(publish.indexOf('  publish:'));
-  requireText(publishJob, 'group: npm-publish-${{ github.event.workflow_run.head_sha }}', 'independent queue per release commit');
+  requireText(publishJob, 'group: npm-publish-${{ github.event.workflow_run.id }}', 'independent queue per Release run');
   requireText(publishJob, "if: github.event.workflow_run.name == 'Release' && github.event.workflow_run.conclusion == 'success'", 'successful Release gate');
-  requireText(publishJob, 'select(.target_commitish ==', 'release bound to trusted commit');
-  requireText(publishJob, 'HEAD_SHA: ${{ github.event.workflow_run.head_sha }}', 'trusted release SHA');
+  requireText(publishJob, 'RUN_ID: ${{ github.event.workflow_run.id }}', 'trusted Release run identity');
+  requireText(publishJob, 'repos/$REPOSITORY/actions/runs/$RUN_ID/artifacts', 'metadata from the exact Release run');
+  requireText(publishJob, 'gh run download "$RUN_ID" --repo "$REPOSITORY" --name npm-release', 'created release metadata handoff');
+  requireText(publishJob, 'EXPECTED_RELEASE_SHA: ${{ steps.release.outputs.sha }}', 'trusted tagged commit');
+  requireText(publishJob, 'test "$(git rev-parse HEAD)" = "$EXPECTED_RELEASE_SHA"', 'tag checkout identity check');
+  forbidText(publishJob, '.target_commitish ==', 'assuming release SHA equals triggering run SHA');
   requireText(publishJob, 'ref: ${{ steps.release.outputs.tag }}', 'checkout of released tag');
   requireText(publishJob, 'node-version-file: .nvmrc', 'major-only publish toolchain');
-  requireText(publishJob, 'permissions:\n      contents: read\n      id-token: write', 'OIDC provenance permission');
+  requireText(publishJob, 'permissions:\n      contents: read\n      actions: read\n      id-token: write', 'OIDC provenance and artifact read permission');
   requireText(publishJob, "      - if: steps.release.outputs.tag != ''\n        run: pnpm install --frozen-lockfile", 'tag-gated install');
   requireText(publishJob, "      - if: steps.release.outputs.tag != ''\n        run: pnpm verify", 'full gate before publication');
   requireText(publishJob, "      - name: Check the registry\n        id: registry\n        if: steps.release.outputs.tag != ''", 'tag-gated registry check');
