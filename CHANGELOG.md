@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.0.0](https://github.com/jbcom/yuka-kit/compare/0.21.0...1.0.0) (2026-10-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* converge on the unscoped yuka-kit package ([#23](https://github.com/jbcom/yuka-kit/issues/23))
+* install and import `yuka-kit` instead of `@jbdevprimary/yuka-kit`; see MIGRATION.md.
+
+### Features
+
+* converge on the unscoped yuka-kit package ([#23](https://github.com/jbcom/yuka-kit/issues/23)) ([4ed51c0](https://github.com/jbcom/yuka-kit/commit/4ed51c01d4f374838e8ca865cca1755a84a7f86c))
+* rename the package to yuka-kit and add the migration guide ([9b49eaf](https://github.com/jbcom/yuka-kit/commit/9b49eaf1f9b79e4267523dbe2bff60f452816098))
+
+
+### Bug Fixes
+
+* validate existing registry artifacts before release retries ([f7630ad](https://github.com/jbcom/yuka-kit/commit/f7630ad884a150b857e05fb012f2cec4547382eb))
+
 ## [0.21.0](https://github.com/jbcom/yuka-kit/compare/0.20.2...0.21.0) (2026-10-06)
 
 
