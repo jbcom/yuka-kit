@@ -5,7 +5,7 @@ description: Install the package and its required or optional peer dependencies.
 
 # Installation
 
-Yuka Kit supports Node.js 24 and newer. The published package is ESM-first,
+Yuka Kit supports Node.js 22 and newer. The published package is ESM-first,
 but its root, Koota, and Solo entry points also have CommonJS exports and
 declarations for consumers that use `require()`.
 

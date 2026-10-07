@@ -9,24 +9,16 @@ is a rename of the import specifier and the dependency.
 
 | Earlier import | `yuka-kit` import |
 | --- | --- |
-| `@arcade-cabinet/ai-yuka` | `yuka-kit` |
-| `@arcade-cabinet/ai-yuka/koota` | `yuka-kit/koota` |
-| `@arcade-cabinet/ai-yuka/solo` | `yuka-kit/solo` |
-| `@arcade-cabinet/ai-yuka/package.json` | `yuka-kit/package.json` |
-| `@arcade-cabinet/yuka-kit` (any entry point) | `yuka-kit` (same entry point) |
 | `@jbdevprimary/yuka-kit` | `yuka-kit` |
 | `@jbdevprimary/yuka-kit/goap` | `yuka-kit/goap` |
 | `@jbdevprimary/yuka-kit/koota` | `yuka-kit/koota` |
 | `@jbdevprimary/yuka-kit/solo` | `yuka-kit/solo` |
 
+For earlier private installations, replace the package name with `yuka-kit`
+and preserve the entry-point suffix (`/koota`, `/solo` or `/package.json`).
 Named imports stay exactly as they are. For example:
 
 ```ts
-// before
-import { createVehicle, EncounterDirector, type EncounterTableEntry } from '@arcade-cabinet/ai-yuka';
-import { SoloCommandAdapter } from '@arcade-cabinet/ai-yuka/solo';
-
-// after
 import { createVehicle, EncounterDirector, type EncounterTableEntry } from 'yuka-kit';
 import { SoloCommandAdapter } from 'yuka-kit/solo';
 ```
@@ -55,9 +47,8 @@ runs green against this package's source.
 3. If the project configured the earlier scope on a private registry (a
    scoped `.npmrc` line, a lockfile registry override), remove it: `yuka-kit`
    installs from the public npm registry.
-4. Update any bundler rule that names the package, for example a manual-chunk
-   pattern matching `node_modules/@arcade-cabinet/ai-yuka/` becomes
-   `node_modules/yuka-kit/`.
+4. Update any bundler rule that names the earlier package, for example a
+   manual-chunk pattern becomes `node_modules/yuka-kit/`.
 5. Delete any local `declare module 'yuka'` shim that only existed to cover
    gaps in the earlier declarations; `yuka-kit` ships a merged ambient
    declaration.
