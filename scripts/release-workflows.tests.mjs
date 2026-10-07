@@ -44,6 +44,9 @@ describe('release workflow contract', () => {
   });
 
   const mutations = [
+    ['publish', "github.event.workflow_run.event == 'push'", "github.event.workflow_run.event == 'pull_request'"],
+    ['publish', 'github.event.workflow_run.head_repository.full_name == github.repository', 'true'],
+    ['publish', 'group: npm-publish-${{ github.event.workflow_run.head_sha }}', 'group: pages'],
     ['publish', 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1', 'actions/checkout@main'],
     ['publish', 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020', 'actions/setup-node@main'],
     ['ci', 'persist-credentials: false', 'persist-credentials: true'],

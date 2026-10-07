@@ -56,7 +56,11 @@ export const validateReleaseWorkflows = ({ ci, release, publish }) => {
 
   requireText(publish, 'workflows: [CI, Release]', 'trusted workflow completion trigger');
   requireText(publish, 'branches: [main]', 'trusted main branch');
+  requireText(publish, "github.event.workflow_run.event == 'push'", 'Pages only from push CI');
+  requireText(publish, 'github.event.workflow_run.head_repository.full_name == github.repository', 'Pages only from this repository');
+  forbidText(publish, '\nconcurrency:', 'shared workflow concurrency queue');
   const publishJob = publish.slice(publish.indexOf('  publish:'));
+  requireText(publishJob, 'group: npm-publish-${{ github.event.workflow_run.head_sha }}', 'independent queue per release commit');
   requireText(publishJob, "if: github.event.workflow_run.name == 'Release' && github.event.workflow_run.conclusion == 'success'", 'successful Release gate');
   requireText(publishJob, 'select(.target_commitish ==', 'release bound to trusted commit');
   requireText(publishJob, 'HEAD_SHA: ${{ github.event.workflow_run.head_sha }}', 'trusted release SHA');

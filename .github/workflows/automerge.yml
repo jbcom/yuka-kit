@@ -1,8 +1,9 @@
 name: Automerge generated pull requests
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
 
 permissions:
   contents: read
@@ -10,24 +11,40 @@ permissions:
 
 jobs:
   merge:
-    # Do not check out or execute pull-request code. Only these two trusted,
-    # generated sources can receive the organization automation credential.
+    # Default-branch code only: never check out or execute pull-request content.
+    # workflow_run restores write credentials withheld on Dependabot PR events.
     if: >-
-      github.event.pull_request.draft == false &&
-      github.event.pull_request.base.ref == 'main' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      (startsWith(github.event.pull_request.head.ref, 'release-please--') ||
-      (github.event.pull_request.user.login == 'dependabot[bot]' &&
-      startsWith(github.event.pull_request.head.ref, 'dependabot/') &&
-      contains(github.event.pull_request.title, 'non-major')))
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write
     steps:
-      - name: Enable auto-merge for the trusted generated pull request
+      - name: Enable auto-merge for the verified generated pull request
         env:
           GH_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
           REPOSITORY: ${{ github.repository }}
-        run: gh pr merge "$PR_URL" --repo "$REPOSITORY" --merge --auto --delete-branch
+          HEAD_REF: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          const { REPOSITORY, HEAD_REF, HEAD_SHA } = process.env;
+          const prs = JSON.parse(execFileSync('gh', [
+            'pr', 'list', '--repo', REPOSITORY, '--head', HEAD_REF, '--state', 'open',
+            '--json', 'number,headRefOid,author,title,isDraft,isCrossRepository,baseRefName',
+          ], { encoding: 'utf8' }));
+          for (const pr of prs) {
+            if (pr.isDraft || pr.isCrossRepository || pr.baseRefName !== 'main' ||
+                pr.headRefOid !== HEAD_SHA) continue;
+            const release = HEAD_REF.startsWith('release-please--');
+            const dependency = ['app/dependabot', 'dependabot[bot]'].includes(pr.author.login) &&
+              HEAD_REF.startsWith('dependabot/') && pr.title.includes('non-major');
+            if (!release && !dependency) continue;
+            execFileSync('gh', [
+              'pr', 'merge', String(pr.number), '--repo', REPOSITORY, '--merge', '--auto',
+            ], { stdio: 'inherit' });
+          }
+          NODE
