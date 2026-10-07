@@ -2,6 +2,17 @@
 
 Each decision records what was chosen and why. Newest first.
 
+## Standard workflow layout and supported Node majors
+
+**Decision.** CI verifies Node 22, 24 and 26 with a single aggregate check.
+Release only plans and creates releases; CD handles Pages and OIDC publication
+from an exact release tag. The trusted publisher workflow is `cd.yml`.
+
+**Why.** Standard check names let branch policy require the same checks across
+packages. Major-only Node selection admits security patch updates; local
+verification on Node 22 establishes the declared `>=22` floor. Snapshot tags
+and all runtime APIs remain unchanged.
+
 ## The package is named `yuka-kit`
 
 **Decision.** The npm name is the unscoped `yuka-kit`. The scoped
@@ -14,14 +25,10 @@ change (`feat!:`), so release-please cuts a clearly marked version for it.
 Every version of the old public name is deprecated with a pointer to the new
 one and none is unpublished, so existing lockfiles keep installing.
 
-**First publication.** npm cannot attach a trusted publisher to a name that
-does not exist yet, so the first `yuka-kit` version is published by hand from
-its release tag without provenance, then the trusted publisher is configured
-for `release.yml`. The publish job checks the registry first: a version that
-is already published is skipped (never published twice), and a package that is
-not on npm at all is a `::warning::` skip rather than a failed job. Any other
-lookup failure still fails the job. The workflow contract test enforces all
-three behaviours (see `scripts/release-workflow-contract.mjs`).
+**First publication.** `yuka-kit@1.0.0` is already published. Subsequent
+releases publish through the `cd.yml` OIDC trusted publisher with provenance.
+The registry check skips existing versions and fails closed on lookup errors
+other than a missing version. Workflow mutation tests enforce these controls.
 
 ## `ai-yuka` converges into `yuka-kit`; `yuka-kit` is a strict superset
 

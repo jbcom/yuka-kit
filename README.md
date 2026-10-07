@@ -19,9 +19,9 @@ the same reviewed documentation graph.
 
 This repository is the source of truth for the package; see
 [CHANGELOG.md](CHANGELOG.md) for what each release added. The public Node.js
-`>=24` compatibility contract and the exact peer on the current Yuka release
+`>=22` compatibility contract and the exact peer on the current Yuka release
 hold across releases. Repository verification and publication use the Node.js
-24 LTS toolchain recorded in `.nvmrc` and CI.
+26 toolchain recorded in `.nvmrc`, with CI covering Node 22, 24 and 26.
 
 Coming from an earlier name of this package? See [MIGRATION.md](MIGRATION.md).
 

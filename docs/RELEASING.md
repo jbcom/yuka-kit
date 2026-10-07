@@ -1,72 +1,54 @@
 # Release process
 
-`yuka-kit` versions follow [Conventional Commits](https://www.conventionalcommits.org/)
-via [release-please](https://github.com/googleapis/release-please). Release
-tags omit a `v` (version `X.Y.Z` is tagged `X.Y.Z`).
+The first public publication is complete: `yuka-kit@1.0.0` is on npm.
+Every subsequent release publishes from `.github/workflows/cd.yml` using
+npm trusted publishing (OIDC) with provenance. No npm token is used.
 
 ## How a release happens
 
-1. Merge Conventional Commits (`feat:`, `fix:`, etc.) to `main` through a
-   normal pull request. CI (`.github/workflows/ci.yml`) must pass first:
-   `pnpm install --frozen-lockfile`, a lockfile-sync check, typechecking, the
-   enforced coverage suite, package builds, Sourcey build, and package
-   consumability checks on Node.js `24.19.0` (pinned in `.nvmrc`) with pnpm
-   via Corepack.
-2. On push to `main`, `.github/workflows/release.yml` runs
-   `googleapis/release-please-action`. If unreleased commits exist, it opens
-   or updates a release PR that bumps `package.json` and
-   `.release-please-manifest.json` and updates `CHANGELOG.md`.
-3. The release PR is a mechanically generated encapsulation of commits that
-   already passed the normal CI gate. The `CI_GITHUB_TOKEN` is used by Release
-   Please to create an update that triggers the protected checks; the trusted
-   `.github/workflows/automerge.yml` then enables merge-commit auto-merge only
-   for that same-repository release branch. Merging it triggers the workflow
-   again, and this time release-please creates the GitHub Release and matching
-   tag.
-4. The workflow's `publish` job (gated on `release-please`'s `released`
-   output) checks out that exact tag and first checks the registry: a version
-   that is already on npm is skipped (never published twice), and a package
-   that does not exist on npm yet is a warned skip (see "First publication"
-   below). Otherwise it installs with a frozen lockfile, runs `pnpm verify`,
-   and runs `pnpm publish --access public --provenance --no-git-checks`. It
-   then checks the exact version anonymously through the public npm registry,
-   retrying briefly for registry propagation. Authentication is `NPM_TOKEN` (a
-   repository secret) until npm Trusted Publishing is configured for this
-   repository, at which point the workflow's `id-token: write` permission is
-   sufficient on its own and the token requirement drops.
+1. Merge Conventional Commits through a normal pull request. CI runs the full
+   `pnpm verify` suite on Node.js 22, 24 and 26 and runs pre-commit.
+   The `CI / gate` check requires every CI job to succeed.
+2. `release.yml` runs release-please only. It proposes the version, manifest
+   and changelog update. After that PR merges, it creates the GitHub release
+   and version tag. Tags omit a `v`.
+3. Release records the created tag and tagged SHA in a small run artifact.
+   `cd.yml` receives completion of the trusted Release workflow on `main`,
+   reads that artifact from the exact run, checks out its tag and verifies
+   the tagged SHA. The release commit can predate the run that created it.
+   A run without a created-release artifact skips publication visibly.
+4. The publish job installs with a frozen lockfile and runs `pnpm verify`.
+   It checks the public registry and skips a version that already exists,
+   verifying its identity and artifact integrity. An E404 for the version
+   permits publication; other registry failures fail closed.
+5. `npm publish --access public --provenance` uses the job's
+   `id-token: write` permission. The npm trusted publisher is configured for
+   repository `jbcom/yuka-kit`, workflow **`cd.yml`**.
+   An anonymous registry lookup retries for propagation and verifies the
+   published artifact. Maintainers do not tag or publish manually.
 
-## First publication
+## Documentation
 
-npm cannot attach a trusted publisher to a package name that does not exist
-yet, so the first version of a new name is published by hand, once, from a
-clean checkout of its release tag, without provenance (provenance needs the CI
-identity). Then configure the trusted publisher (repository `jbcom/yuka-kit`,
-workflow `release.yml`) on npmjs.com; every later release publishes from CI
-with provenance. Until the package exists, the workflow's publish job logs a
-`::warning::` and skips rather than failing.
-
-Before that one-time publication, install and verify from the clean release-tag
-checkout to generate every runtime and type entry point in `dist/`:
-
-```sh
-pnpm install --frozen-lockfile
-pnpm verify
-npm publish --registry=https://registry.npmjs.org --access public --provenance=false
-```
-
-The explicit `--provenance=false` overrides the repository's provenance defaults
-for this local bootstrap only. Authenticate using the maintainer's local npm
-configuration; subsequent releases use the CI identity and provenance.
+On successful CI completion on `main`, the separate CD deploy job checks out
+that exact CI commit, builds Sourcey and deploys `docs/dist` to GitHub Pages.
+Publication and documentation have separate job permissions.
 
 ## Local verification
 
-From a clean checkout: `pnpm install --frozen-lockfile && pnpm verify`.
-`pnpm verify` runs dependency and workflow checks, typechecking, the coverage
-gate, build/package smoke checks, and the Sourcey documentation build.
-Except for the one-time first publication of a new package name described
-above, there is no manual tagging or manual publish step. Subsequent releases
-are cut by merging the release-please PR and published from CI.
+Run `pnpm install --frozen-lockfile`, `pnpm verify` and
+`pre-commit run --all-files`. Install both Git hooks with
+`pre-commit install --hook-type pre-commit --hook-type commit-msg`.
 
-The package declares Node.js `>=24` compatibility. `24.19.0` is the exact CI
-and publish toolchain pin, not a claim that earlier Node 24 patch releases are
-unsupported.
+The package supports Node.js `>=22`; CI covers each non-EOL major (22/24/26).
+`.nvmrc` selects major 26 for local development and publishing, allowing patch
+updates without an exact Node pin. The verification suite retains dependency
+checks, workflow mutation tests, typechecking, coverage, builds, packed ESM/CJS
+consumer smoke tests, publint, export/type resolution and the Sourcey build.
+
+Branch policy tooling lives in `scripts/apply-branch-ruleset.mjs`. Its defaults
+are this repository and the four checks `CI / gate`, `title`,
+  `Repository Policy / gate` and `Dependency Review / gate`.
+
+Repository Actions policy requires SHA pinning. Its third-party allowlist must
+include the exact pinned release-please, pnpm setup and semantic PR title actions
+used by these workflows; GitHub-owned actions remain allowed.

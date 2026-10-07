@@ -86,4 +86,3 @@ export function generateFormation(
 
     return { positions, complete: positions.length === spec.count };
 }
-

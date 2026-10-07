@@ -10,7 +10,7 @@
     "url": "git+https://github.com/jbcom/yuka-kit.git"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=22"
   },
   "packageManager": "pnpm@11.21.0",
   "publishConfig": {
@@ -96,7 +96,7 @@
     "verify:dependency-currency": "node scripts/dependency-currency-bootstrap/verify.mjs",
     "smoke:consumer": "node scripts/smoke-fresh-consumer.mjs",
     "docs:build": "pnpm --filter yuka-kit-docs run build",
-    "verify": "pnpm run verify:dependency-currency && pnpm run test:dependency-currency-bootstrap && pnpm run test:release-workflows && pnpm run typecheck && pnpm run test:coverage && pnpm run build && node scripts/smoke-package.mjs && pnpm run smoke:consumer && pnpm run docs:build"
+    "verify": "pnpm run verify:dependency-currency && pnpm run test:dependency-currency-bootstrap && pnpm run test:release-workflows && pnpm run typecheck && pnpm run test:coverage && pnpm run build && node scripts/smoke-package.mjs && pnpm run smoke:consumer && pnpm dlx publint && pnpm dlx @arethetypeswrong/cli --pack . && pnpm run docs:build"
   },
   "dependencies": {
     "@noble/hashes": "2.4.0"
