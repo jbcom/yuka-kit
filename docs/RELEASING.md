@@ -45,6 +45,19 @@ workflow `release.yml`) on npmjs.com; every later release publishes from CI
 with provenance. Until the package exists, the workflow's publish job logs a
 `::warning::` and skips rather than failing.
 
+Before that one-time publication, install and verify from the clean release-tag
+checkout to generate every runtime and type entry point in `dist/`:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm verify
+npm publish --registry=https://registry.npmjs.org --access public --provenance=false
+```
+
+The explicit `--provenance=false` overrides the repository's provenance defaults
+for this local bootstrap only. Authenticate using the maintainer's local npm
+configuration; subsequent releases use the CI identity and provenance.
+
 ## Local verification
 
 From a clean checkout: `pnpm install --frozen-lockfile && pnpm verify`.

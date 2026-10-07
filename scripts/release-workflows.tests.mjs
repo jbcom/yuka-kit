@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { describe, it } from 'node:test';
 import { validateReleaseWorkflows } from './release-workflow-contract.mjs';
+import { assertPublishedArtifact } from './verify-published-artifact.mjs';
 
 const ci = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
 const publish = await readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
@@ -9,6 +10,21 @@ const manifest = JSON.parse(await readFile(new URL('../package.json', import.met
 const nvmrc = (await readFile(new URL('../.nvmrc', import.meta.url), 'utf8')).trim();
 
 describe('release workflow contract', () => {
+  it('rejects existing versions with foreign identity or different published bytes', () => {
+    const integrity = 'sha512-YWJjZA==';
+    const published = {
+      name: manifest.name, version: manifest.version,
+      repository: manifest.repository, dist: { integrity },
+    };
+    assert.doesNotThrow(() => assertPublishedArtifact(manifest, published, { integrity }));
+    assert.throws(() => assertPublishedArtifact(manifest, { ...published, name: 'other' }, { integrity }), /name differs/);
+    assert.throws(() => assertPublishedArtifact(manifest, { ...published, version: '0.0.0' }, { integrity }), /version differs/);
+    assert.throws(() => assertPublishedArtifact(manifest, { ...published, repository: { url: 'https://example.com/other' } }, { integrity }), /repository differs/);
+    assert.throws(() => assertPublishedArtifact(manifest, { ...published, dist: { integrity: 'sha512-ZGlmZmVyZW50' } }, { integrity }), /artifact differs/);
+    assert.throws(() => assertPublishedArtifact(manifest, { ...published, dist: {} }, { integrity }), /artifact differs/);
+    assert.throws(() => assertPublishedArtifact(manifest, published, {}), /local pack integrity is missing/);
+    assert.throws(() => validateReleaseWorkflows({ ci, publish: publish.replace('node scripts/verify-published-artifact.mjs', '') }), /artifact identity and integrity/);
+  });
   it('separates the public Node compatibility range from the exact execution toolchain', () => {
     assert.equal(manifest.engines.node, '>=24');
     assert.equal(nvmrc, '24.19.0');

@@ -87,7 +87,7 @@ export const validateReleaseWorkflows = ({ ci, publish }) => {
   requireText(publishJob, 'ref: ${{ needs.release-please.outputs.tag }}', 'checkout of the released tag');
   requireText(publishJob, 'permissions:\n      contents: read', 'least-privilege publish contents');
   requireText(publishJob, 'id-token: write', 'provenance permission');
-  requireText(publishJob, 'pnpm verify', 'full gate before publication');
+  requireText(publishJob, "      - if: steps.registry.outputs.publish == 'true'\n        run: pnpm verify\n", 'full gate before publication');
   requireText(publishJob, '--provenance', 'npm provenance');
   requireText(publishJob, '--access public');
   requireExactCount(publishJob, 'pnpm publish', 1, 'single publication command');
@@ -99,6 +99,7 @@ export const validateReleaseWorkflows = ({ ci, publish }) => {
   // publication is manual), not a failed job. Every later step is gated on it.
   requireText(publishJob, 'id: registry', 'registry state check');
   requireText(publishJob, 'already on npm', 'skip when the version is already published');
+  requireText(publishJob, 'node scripts/verify-published-artifact.mjs', 'existing artifact identity and integrity verification');
   requireText(publishJob, 'E404', 'distinguish a missing package from a registry failure');
   requireText(publishJob, '::warning::', 'visible warning when the first publication is manual');
   requireExactCount(publishJob, "if: steps.registry.outputs.publish == 'true'", 5, 'gated corepack, install, verify, publish and verification');
