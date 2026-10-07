@@ -21,7 +21,9 @@ This repository is the source of truth for the package; see
 [CHANGELOG.md](CHANGELOG.md) for what each release added. The public Node.js
 `>=22` compatibility contract and the exact peer on the current Yuka release
 hold across releases. Repository verification and publication use the Node.js
-26 toolchain recorded in `.nvmrc`, with CI covering Node 22, 24 and 26.
+26 toolchain recorded in `.nvmrc`, with CI covering Node.js 22, 24 and 26.
+Major-only selectors accept maintained patches without requiring an exact
+Node.js version. Odd-numbered, end-of-life lines are outside the support policy.
 
 Coming from an earlier name of this package? See [MIGRATION.md](MIGRATION.md).
 
