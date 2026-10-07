@@ -50,8 +50,9 @@ with provenance. Until the package exists, the workflow's publish job logs a
 From a clean checkout: `pnpm install --frozen-lockfile && pnpm verify`.
 `pnpm verify` runs dependency and workflow checks, typechecking, the coverage
 gate, build/package smoke checks, and the Sourcey documentation build.
-There is no manual tagging or manual publish step — the only way to cut a
-release is merging the release-please PR.
+Except for the one-time first publication of a new package name described
+above, there is no manual tagging or manual publish step. Subsequent releases
+are cut by merging the release-please PR and published from CI.
 
 The package declares Node.js `>=24` compatibility. `24.19.0` is the exact CI
 and publish toolchain pin, not a claim that earlier Node 24 patch releases are
