@@ -5,9 +5,9 @@ repos:
     hooks:
       - id: check-merge-conflict
       - id: check-yaml
-        exclude: ^pnpm-lock\\.yaml$
+        exclude: ^pnpm-lock\.yaml$
       - id: check-yaml
-        files: ^pnpm-lock\\.yaml$
+        files: ^pnpm-lock\.yaml$
         args: [--allow-multiple-documents]
       - id: check-json
       - id: detect-private-key
