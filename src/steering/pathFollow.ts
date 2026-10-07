@@ -1,7 +1,6 @@
 /**
- * Waypoint path-following helpers (from voxel-realms' yuka-agent golden-path
- * runner, reduced to the reusable core: Path + FollowPathBehavior +
- * OnPathBehavior wiring with its tuned defaults).
+ * Waypoint path-following helpers: Path + FollowPathBehavior +
+ * OnPathBehavior wiring with tuned defaults.
  */
 import { FollowPathBehavior, OnPathBehavior, Path, Vector3 } from 'yuka';
 import type { Vehicle } from 'yuka';

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * Smoke test for the package.json "exports" subpaths themselves — every
- * name a consumer can import from `@jbcom/yuka-kit/koota` and
- * `@jbcom/yuka-kit/solo` must actually resolve through each barrel, not
+ * name a consumer can import from `yuka-kit/koota` and
+ * `yuka-kit/solo` must actually resolve through each barrel, not
  * just through the individual source module it re-exports.
  */
 describe('koota entry-point barrel', () => {

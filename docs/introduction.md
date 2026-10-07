@@ -37,12 +37,12 @@ serialize Yuka object graphs.
 - Hearing (noise events with distance attenuation and occlusion) and
   per-target perception memory with confidence decay.
 - A deterministic GOAP planner whose plans run as Yuka goals chosen by
-  `Think` (`@jbdevprimary/yuka-kit/goap`).
+  `Think` (`yuka-kit/goap`).
 - Deterministic encounters, formations, seeded randomness, and NPC routines.
 - Closed-schema snapshot validation before restoration of package state.
 - Optional `koota` and RPGJS Solo bridge entry points.
 
-The root entry point is ECS-agnostic. `@jbdevprimary/yuka-kit/koota` and
-`@jbdevprimary/yuka-kit/solo` are optional, separately imported entry points,
+The root entry point is ECS-agnostic. `yuka-kit/koota` and
+`yuka-kit/solo` are optional, separately imported entry points,
 so games that do not use those frameworks do not pull them into their own
 integration path.

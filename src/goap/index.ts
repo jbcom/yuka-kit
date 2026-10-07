@@ -1,6 +1,6 @@
 /// <reference path="../yuka.d.ts" />
 /**
- * @module @jbdevprimary/yuka-kit/goap
+ * @module yuka-kit/goap
  * Goal-oriented action planning over Yuka's goal system: a deterministic A*
  * planner over world-state predicates, an action registry that equipment can
  * contribute to, and an executor that runs plans as Yuka composite goals

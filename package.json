@@ -1,5 +1,5 @@
 {
-  "name": "@jbdevprimary/yuka-kit",
+  "name": "yuka-kit",
   "version": "0.21.0",
   "description": "Shared Yuka AI toolkit with deterministic encounters, NPC routines, class governors, and RPGJS Solo command-driven playthroughs.",
   "type": "module",
@@ -20,6 +20,7 @@
   "files": [
     "dist",
     "CHANGELOG.md",
+    "MIGRATION.md",
     "README.md"
   ],
   "main": "./dist/cjs/index.js",
@@ -94,7 +95,7 @@
     "test:release-workflows": "node --test scripts/release-workflows.tests.mjs",
     "verify:dependency-currency": "node scripts/dependency-currency-bootstrap/verify.mjs",
     "smoke:consumer": "node scripts/smoke-fresh-consumer.mjs",
-    "docs:build": "pnpm --filter @jbdevprimary/yuka-kit-docs run build",
+    "docs:build": "pnpm --filter yuka-kit-docs run build",
     "verify": "pnpm run verify:dependency-currency && pnpm run test:dependency-currency-bootstrap && pnpm run test:release-workflows && pnpm run typecheck && pnpm run test:coverage && pnpm run build && node scripts/smoke-package.mjs && pnpm run smoke:consumer && pnpm run docs:build"
   },
   "dependencies": {

@@ -17,7 +17,7 @@ describe('release workflow contract', () => {
   });
 
   it('publishes publicly with provenance under the extracted name', () => {
-    assert.equal(manifest.name, '@jbdevprimary/yuka-kit');
+    assert.equal(manifest.name, 'yuka-kit');
     assert.equal(manifest.publishConfig.access, 'public');
     assert.equal(manifest.publishConfig.provenance, true);
     assert.equal(manifest.license, 'MIT');
@@ -46,11 +46,12 @@ describe('release workflow contract', () => {
   });
 
   it('rejects publication that skips the verification gate', () => {
-    const gateRemoved = publish.replace('      - run: pnpm verify\n', '');
+    const gateStep = "      - if: steps.registry.outputs.publish == 'true'\n        run: pnpm verify\n";
+    const gateRemoved = publish.replace(gateStep, '');
     assert.throws(() => validateReleaseWorkflows({ ci, publish: gateRemoved }), /full gate before publication/);
     const gateAfterPublish = publish
-      .replace('      - run: pnpm verify\n', '')
-      .replace('      - name: Publish', '      - run: pnpm verify\n      - name: Publish')
+      .replace(gateStep, '')
+      .replace('      - name: Publish', `${gateStep}      - name: Publish`)
       .replace(
         'run: pnpm publish --access public --provenance --no-git-checks',
         'run: pnpm publish --access public --provenance --no-git-checks # moved',
@@ -102,14 +103,31 @@ describe('release workflow contract', () => {
     );
   });
 
-  it('rejects any surviving private-registry or pre-extraction reference', () => {
+  it('rejects any surviving private-registry reference', () => {
     assert.throws(
-      () => validateReleaseWorkflows({ ci, publish: publish.replace('registry-url: https://registry.npmjs.org', 'registry-url: https://redacted-private-registry.example/api/packages/arcade-cabinet/npm/') }),
-      /private Gitea registry/,
+      () => validateReleaseWorkflows({ ci, publish: publish.replace('registry-url: https://registry.npmjs.org', 'registry-url: https://redacted-private-registry.example/api/packages/example/npm/') }),
+      /private registry/,
     );
+  });
+
+  it('never publishes a version twice or fails on a package that is not on npm yet', () => {
+    // Dropping the gate from any publishing step would double-publish.
     assert.throws(
-      () => validateReleaseWorkflows({ ci: `${ci}\n      # @arcade-cabinet/ai-yuka\n`, publish }),
-      /pre-extraction package scope/,
+      () => validateReleaseWorkflows({
+        ci,
+        publish: publish.replace("      - name: Publish\n        if: steps.registry.outputs.publish == 'true'\n", '      - name: Publish\n'),
+      }),
+      /gated corepack, install, verify, publish and verification/,
+    );
+    // Without the E404 split, a missing package would fail the whole job.
+    assert.throws(
+      () => validateReleaseWorkflows({ ci, publish: publish.replaceAll('E404', 'E000') }),
+      /distinguish a missing package from a registry failure/,
+    );
+    // The skip must stay visible.
+    assert.throws(
+      () => validateReleaseWorkflows({ ci, publish: publish.replaceAll('::warning::', '::debug::') }),
+      /visible warning/,
     );
   });
 });

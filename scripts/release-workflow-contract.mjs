@@ -37,13 +37,11 @@ const sectionBetween = (source, start, end) => {
 /**
  * Release contract for the GitHub-hosted OSS package.
  *
- * The Gitea ancestor of this file proved immutability by hand: authenticated
- * Branch API probes, SHA-256 equality on the tarball and tar stream, and
- * manually scoped publish tokens. On GitHub that trust model is replaced by
- * release-please (the tag is derived from the merged commit, never typed) plus
- * npm provenance (a signed, publicly verifiable attestation binding the
- * published bytes to this repository and workflow). The invariants below are
- * what still has to be enforced by inspection rather than by the platform.
+ * The trust model is release-please (the tag is derived from the merged
+ * commit, never typed) plus npm provenance (a signed, publicly verifiable
+ * attestation binding the published bytes to this repository and workflow).
+ * The invariants below are what still has to be enforced by inspection rather
+ * than by the platform.
  */
 export const validateReleaseWorkflows = ({ ci, publish }) => {
   for (const [name, workflow] of [
@@ -94,20 +92,28 @@ export const validateReleaseWorkflows = ({ ci, publish }) => {
   requireText(publishJob, '--access public');
   requireExactCount(publishJob, 'pnpm publish', 1, 'single publication command');
   requireText(publishJob, 'Verify public registry publication', 'anonymous registry verification');
-  requireText(publishJob, 'npm view "@jbdevprimary/yuka-kit@${package_version}" version --registry=https://registry.npmjs.org', 'public registry lookup');
+  requireText(publishJob, 'npm view "${package_name}@${package_version}" version --registry=https://registry.npmjs.org', 'public registry lookup');
+
+  // A version already on the registry is never published twice, and a package
+  // that does not exist on npm yet is a warned, documented skip (its first
+  // publication is manual), not a failed job. Every later step is gated on it.
+  requireText(publishJob, 'id: registry', 'registry state check');
+  requireText(publishJob, 'already on npm', 'skip when the version is already published');
+  requireText(publishJob, 'E404', 'distinguish a missing package from a registry failure');
+  requireText(publishJob, '::warning::', 'visible warning when the first publication is manual');
+  requireExactCount(publishJob, "if: steps.registry.outputs.publish == 'true'", 5, 'gated corepack, install, verify, publish and verification');
 
   // The gate must precede the publish, or it proves nothing about the bytes.
-  requireOrder(publishJob, ['pnpm install --frozen-lockfile', 'pnpm verify', 'pnpm publish', 'Verify public registry publication']);
+  requireOrder(publishJob, ['id: registry', 'pnpm install --frozen-lockfile', 'pnpm verify', 'pnpm publish', 'Verify public registry publication']);
 
   // The publish credential is scoped to the publish step alone.
   requireExactCount(publish, 'NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}', 1, 'step-scoped npm token');
   forbidText(publish, 'npm config set', 'persistent npm auth configuration');
   forbidText(publish, '//registry.npmjs.org/:_authToken=', 'inlined registry credential');
 
-  // This package is public on npm; the private Gitea scope must not survive.
+  // This package is public on npm; no private registry may survive.
   for (const workflow of [ci, publish]) {
-    forbidText(workflow, 'redacted-private-registry.example', 'private Gitea registry');
-    forbidText(workflow, '@arcade-cabinet/', 'pre-extraction package scope');
-    forbidText(workflow, 'GITEA_TOKEN', 'Gitea credential');
+    forbidText(workflow, 'redacted-private-registry.example', 'private registry');
+    forbidText(workflow, 'GITEA_TOKEN', 'private registry credential');
   }
 };

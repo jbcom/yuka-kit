@@ -10,7 +10,7 @@ but its root, Koota, and Solo entry points also have CommonJS exports and
 declarations for consumers that use `require()`.
 
 ```sh
-pnpm add @jbdevprimary/yuka-kit yuka
+pnpm add yuka-kit yuka
 ```
 
 `yuka` is a required peer dependency. Install `koota` only when using the
@@ -21,13 +21,13 @@ pnpm add koota
 ```
 
 Import from the root entry point for engine-agnostic modules, from
-`@jbdevprimary/yuka-kit/goap` for goal-oriented action planning, or from
-`@jbdevprimary/yuka-kit/koota` and `@jbdevprimary/yuka-kit/solo` for those
+`yuka-kit/goap` for goal-oriented action planning, or from
+`yuka-kit/koota` and `yuka-kit/solo` for those
 optional integrations. Do not import internal `src/` paths: only the four
 documented package exports are public contracts.
 
 ```ts
-import { createVehicle, createEntityManager, manage, stepAI } from '@jbdevprimary/yuka-kit';
+import { createVehicle, createEntityManager, manage, stepAI } from 'yuka-kit';
 
 const manager = createEntityManager();
 const actor = createVehicle({ speed: 3 });

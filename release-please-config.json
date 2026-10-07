@@ -3,7 +3,7 @@
   "packages": {
     ".": {
       "release-type": "node",
-      "package-name": "@jbdevprimary/yuka-kit",
+      "package-name": "yuka-kit",
       "include-component-in-tag": false,
       "include-v-in-tag": false
     }

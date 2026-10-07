@@ -5,7 +5,7 @@ description: Find the supported imports and choose the narrowest Yuka Kit primit
 
 # API catalogue
 
-All items below are exported from `@jbdevprimary/yuka-kit` unless an entry
+All items below are exported from `yuka-kit` unless an entry
 point is named explicitly. Prefer the smallest primitive that expresses the
 game rule; the library intentionally avoids a single opaque AI controller.
 
@@ -29,7 +29,7 @@ game rule; the library intentionally avoids a single opaque AI controller.
 | --- | --- |
 | Combat state machine | `createFsm`, `PatrolState`, `ChaseState`, `AttackState`, `FleeState`, `DeadState` |
 | Generic goals | `createBrain`, `BrainRegistry`, evaluators, `createBrainForType` |
-| Action planning | `@jbdevprimary/yuka-kit/goap`: `planGoap`, `GoapActionRegistry`, `GoapPlanGoal`, `GoapGoalEvaluator` |
+| Action planning | `yuka-kit/goap`: `planGoap`, `GoapActionRegistry`, `GoapPlanGoal`, `GoapGoalEvaluator` |
 | Boss phases | `createBossBrain`, `BossBrain`, `BossPhaseConfig` |
 | Combat proposals | `TacticalCombatAgent`, `BossTacticalAgent` |
 | Class playthrough decisions | `createClassGovernor`, `ClassGovernor` |
@@ -42,8 +42,8 @@ game rule; the library intentionally avoids a single opaque AI controller.
 | NPC schedules | `RoutineAgent`, `resolveRoutineTarget`, `resolveStateAwareRoutineTarget` |
 | Snapshot validation | `validateFsmStateSnapshot`, `validateEncounterDirectorSnapshot`, `validateRoutineAgentSnapshot`, `validatePerceptionMemorySnapshot`, `validateGoapPlanSnapshot` (goap entry) |
 | Stable proposals | `deriveDeterministicIdentity`, `validateSemanticCommandProposal`, `selectSemanticCommandProposal` |
-| Koota bridge | `@jbdevprimary/yuka-kit/koota`: `AIBridge`, `AIMemory`, `AIHearing`, `AIAwareness`, `AIPerceptionMemory`, `AIState`, `Intent`, `YukaRef` |
-| RPGJS Solo bridge | `@jbdevprimary/yuka-kit/solo`: `SoloAIBridge`, `SoloCommandAdapter`, strict envelope helpers |
+| Koota bridge | `yuka-kit/koota`: `AIBridge`, `AIMemory`, `AIHearing`, `AIAwareness`, `AIPerceptionMemory`, `AIState`, `Intent`, `YukaRef` |
+| RPGJS Solo bridge | `yuka-kit/solo`: `SoloAIBridge`, `SoloCommandAdapter`, strict envelope helpers |
 
 Every returned `AgentIntent` is descriptive: it is not a side effect. See the
 [agent integration contract](../agent-integration/) for the validation and

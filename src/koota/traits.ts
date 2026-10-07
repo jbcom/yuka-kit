@@ -1,5 +1,5 @@
 /**
- * Koota traits for yuka-driven AI (from bok's src/traits/ai.ts).
+ * Koota traits for yuka-driven AI.
  * The only ECS-specific part of this package — non-koota games use the rest
  * of the modules directly on plain yuka objects.
  */

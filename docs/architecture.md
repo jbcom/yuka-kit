@@ -42,10 +42,10 @@ for the ground plane. `astar()` is the exception: it consumes a rectangular
 Only these package entry points are supported:
 
 ```ts
-import {} from '@jbdevprimary/yuka-kit';
-import {} from '@jbdevprimary/yuka-kit/goap';
-import {} from '@jbdevprimary/yuka-kit/koota';
-import {} from '@jbdevprimary/yuka-kit/solo';
+import {} from 'yuka-kit';
+import {} from 'yuka-kit/goap';
+import {} from 'yuka-kit/koota';
+import {} from 'yuka-kit/solo';
 ```
 
 The root is framework-agnostic. GOAP is a separate entry point so games that

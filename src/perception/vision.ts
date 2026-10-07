@@ -301,7 +301,7 @@ export function createLitVisionSensor<Hit>(
 }
 
 /**
- * The perception → FSM pattern from aethermoor: when `seen` is true and the
+ * The perception → FSM pattern: when `seen` is true and the
  * FSM isn't already in `stateWhenSeen`, transition to it. Returns true when
  * a transition fired.
  */

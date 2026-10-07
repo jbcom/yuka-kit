@@ -39,9 +39,15 @@ export default defineConfig({
     ],
   },
   navbar: {
-    links: [{ type: 'github', href: 'https://github.com/jbcom/yuka-kit' }],
+    links: [
+      { type: 'github', href: 'https://github.com/jbcom/yuka-kit' },
+      { type: 'npm', href: 'https://www.npmjs.com/package/yuka-kit' },
+    ],
   },
   footer: {
-    links: [{ type: 'github', href: 'https://github.com/jbcom/yuka-kit' }],
+    links: [
+      { type: 'github', href: 'https://github.com/jbcom/yuka-kit' },
+      { type: 'npm', href: 'https://www.npmjs.com/package/yuka-kit' },
+    ],
   },
 });

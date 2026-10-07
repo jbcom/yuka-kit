@@ -30,6 +30,7 @@ try {
   for (const required of [
     'README.md',
     'CHANGELOG.md',
+    'MIGRATION.md',
     'dist/esm/index.js',
     'dist/esm/index.d.ts',
     'dist/esm/proposals/identity.d.ts',
@@ -47,7 +48,7 @@ try {
   }
 
   await writeFile(join(consumerDirectory, 'package.json'), JSON.stringify({
-    name: 'arcade-ai-yuka-fresh-consumer',
+    name: 'yuka-kit-fresh-consumer',
     private: true,
     type: 'module',
   }, null, 2));
@@ -85,17 +86,17 @@ import {
   validateRoutineAgentSnapshot,
   type RoutineSchedule,
   type StateAwareRoutineSchedule,
-} from '@jbdevprimary/yuka-kit';
+} from 'yuka-kit';
 import {
   createAICommandDispatchEnvelope,
   SoloCommandAdapter,
-} from '@jbdevprimary/yuka-kit/solo';
+} from 'yuka-kit/solo';
 import {
   createHearingSensor,
   createLitVisionSensor,
   PerceptionMemory,
   type HeardNoise,
-} from '@jbdevprimary/yuka-kit';
+} from 'yuka-kit';
 import {
   GoapActionRegistry,
   GoapGoalEvaluator,
@@ -104,7 +105,7 @@ import {
   validateGoapPlanSnapshot,
   type GoapActionDefinition,
   type GoapWorldState,
-} from '@jbdevprimary/yuka-kit/goap';
+} from 'yuka-kit/goap';
 import { GameEntity, Goal, Think } from 'yuka';
 
 class Companion extends GameEntity {
@@ -252,7 +253,7 @@ import {
   resolveStateAwareRoutineTarget,
   TacticalCombatAgent,
   validateEncounterDirectorSnapshot,
-} from '@jbdevprimary/yuka-kit';
+} from 'yuka-kit';
 const target = resolveStateAwareRoutineTarget({
   entries: [{ id: 'work', mapId: 'town', position: { x: 1, y: 0, z: 1 }, when: { phaseId: 'work' } }],
 }, { day: 1, minuteOfDay: 1, mapId: 'home', position: { x: 0, y: 0, z: 0 }, phaseId: 'work' });
@@ -271,7 +272,7 @@ const {
   resolveStateAwareRoutineTarget,
   TacticalCombatAgent,
   validateEncounterDirectorSnapshot,
-} = require('@jbdevprimary/yuka-kit');
+} = require('yuka-kit');
 const target = resolveStateAwareRoutineTarget({
   entries: [{ id: 'work', mapId: 'town', position: { x: 1, y: 0, z: 1 }, when: { phaseId: 'work' } }],
 }, { day: 1, minuteOfDay: 1, mapId: 'home', position: { x: 0, y: 0, z: 0 }, phaseId: 'work' });
@@ -295,12 +296,12 @@ memory.recordSighting('mummy', { x: 1, y: 0, z: 0 }, 0);
 if (memory.get('mummy', 2).confidence !== 0.5) throw new Error('${label} perception memory export failed');
 `;
   await writeFile(join(consumerDirectory, 'goap-esm.mjs'), `
-import { planGoap, GoapPlanGoal, GoapGoalEvaluator } from '@jbdevprimary/yuka-kit/goap';
-import { PerceptionMemory } from '@jbdevprimary/yuka-kit';
+import { planGoap, GoapPlanGoal, GoapGoalEvaluator } from 'yuka-kit/goap';
+import { PerceptionMemory } from 'yuka-kit';
 ${goapRuntimeCheck('ESM')}`);
   await writeFile(join(consumerDirectory, 'goap-cjs.cjs'), `
-const { planGoap, GoapPlanGoal, GoapGoalEvaluator } = require('@jbdevprimary/yuka-kit/goap');
-const { PerceptionMemory } = require('@jbdevprimary/yuka-kit');
+const { planGoap, GoapPlanGoal, GoapGoalEvaluator } = require('yuka-kit/goap');
+const { PerceptionMemory } = require('yuka-kit');
 ${goapRuntimeCheck('CJS')}`);
   run(process.execPath, ['esm.mjs']);
   run(process.execPath, ['cjs.cjs']);
@@ -314,8 +315,8 @@ ${goapRuntimeCheck('CJS')}`);
   await writeFile(join(consumerDirectory, 'koota-consumer.ts'), `
 import {
   AIAwareness, AIBridge, AIHearing, AIPerceptionMemory, AIState, type AIBridgeTraits,
-} from '@jbdevprimary/yuka-kit/koota';
-import { PerceptionMemory } from '@jbdevprimary/yuka-kit';
+} from 'yuka-kit/koota';
+import { PerceptionMemory } from 'yuka-kit';
 import { createWorld, trait } from 'koota';
 const bridgeConstructor: typeof AIBridge = AIBridge;
 const stateTrait = AIState;
@@ -344,11 +345,11 @@ void sense;
     include: ['koota-consumer.ts'],
   }, null, 2));
   await writeFile(join(consumerDirectory, 'koota-esm.mjs'), `
-import { AIBridge, AIState } from '@jbdevprimary/yuka-kit/koota';
+import { AIBridge, AIState } from 'yuka-kit/koota';
 if (typeof AIBridge !== 'function' || !AIState) throw new Error('ESM koota bridge export failed');
 `);
   await writeFile(join(consumerDirectory, 'koota-cjs.cjs'), `
-const { AIBridge, AIState } = require('@jbdevprimary/yuka-kit/koota');
+const { AIBridge, AIState } = require('yuka-kit/koota');
 if (typeof AIBridge !== 'function' || !AIState) throw new Error('CJS koota bridge export failed');
 `);
   run(join(consumerDirectory, 'node_modules/.bin/tsc'), ['--project', 'koota-tsconfig.json']);

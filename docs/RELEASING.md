@@ -1,9 +1,8 @@
 # Release process
 
-`@jbdevprimary/yuka-kit` versions follow [Conventional Commits](https://www.conventionalcommits.org/)
+`yuka-kit` versions follow [Conventional Commits](https://www.conventionalcommits.org/)
 via [release-please](https://github.com/googleapis/release-please). Release
-tags omit a `v` (package `0.19.1` uses tag `0.19.1`), matching the historical
-tag scheme.
+tags omit a `v` (version `X.Y.Z` is tagged `X.Y.Z`).
 
 ## How a release happens
 
@@ -25,13 +24,26 @@ tag scheme.
    again, and this time release-please creates the GitHub Release and matching
    tag.
 4. The workflow's `publish` job (gated on `release-please`'s `released`
-   output) checks out that exact tag, installs with a frozen lockfile, runs
-   `pnpm verify`, and runs `pnpm publish --access public --provenance
-   --no-git-checks`. It then checks the exact version anonymously through the
-   public npm registry, retrying briefly for registry propagation. Authentication is `NPM_TOKEN` (a repository secret) until
-   npm Trusted Publishing is configured for this repository, at which point
-   the workflow's `id-token: write` permission is sufficient on its own and
-   the token requirement drops.
+   output) checks out that exact tag and first checks the registry: a version
+   that is already on npm is skipped (never published twice), and a package
+   that does not exist on npm yet is a warned skip (see "First publication"
+   below). Otherwise it installs with a frozen lockfile, runs `pnpm verify`,
+   and runs `pnpm publish --access public --provenance --no-git-checks`. It
+   then checks the exact version anonymously through the public npm registry,
+   retrying briefly for registry propagation. Authentication is `NPM_TOKEN` (a
+   repository secret) until npm Trusted Publishing is configured for this
+   repository, at which point the workflow's `id-token: write` permission is
+   sufficient on its own and the token requirement drops.
+
+## First publication
+
+npm cannot attach a trusted publisher to a package name that does not exist
+yet, so the first version of a new name is published by hand, once, from a
+clean checkout of its release tag, without provenance (provenance needs the CI
+identity). Then configure the trusted publisher (repository `jbcom/yuka-kit`,
+workflow `release.yml`) on npmjs.com; every later release publishes from CI
+with provenance. Until the package exists, the workflow's publish job logs a
+`::warning::` and skips rather than failing.
 
 ## Local verification
 
