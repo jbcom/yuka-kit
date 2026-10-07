@@ -41,7 +41,10 @@ export const validateReleaseWorkflows = ({ ci, release, publish }) => {
   requireText(ci, 'run: pnpm verify', 'full CI verification');
   requireText(ci, 'name: CI / gate', 'standard CI gate');
   requireText(ci, 'needs: [verify, pre-commit, legacy-verify]', 'all CI jobs aggregated');
-  requireText(ci, 'test "$LEGACY_VERIFY_RESULT" = success', 'legacy check cannot be skipped');
+  const gate = ci.slice(ci.indexOf('\n  gate:'));
+  requireText(gate, 'NEEDS_JSON: ${{ toJSON(needs) }}', 'all gate results supplied');
+  requireText(gate, '["success", "skipped"].includes(result)', 'gate accepts only success or skipped');
+  requireText(gate, 'process.exit(1)', 'gate fails closed');
   requireText(ci, 'if: always()', 'gate runs after failures');
   requireText(ci, 'test "$VERIFY_RESULT" = success', 'verification cannot be skipped');
   requireText(ci, 'test "$PRE_COMMIT_RESULT" = success', 'pre-commit cannot be skipped');
