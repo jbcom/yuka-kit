@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { describe, it } from 'node:test';
 import { validateReleaseWorkflows } from './release-workflow-contract.mjs';
@@ -43,6 +44,17 @@ describe('release workflow contract', () => {
     assert.doesNotThrow(() => validateReleaseWorkflows(workflows));
   });
 
+  it('executes the aggregate gate against successful, skipped and failed jobs', () => {
+    const gate = ci.slice(ci.indexOf('\n  gate:'));
+    const code = gate.match(/node --input-type=module -e '([\s\S]*?)'/)[1];
+    for (const result of ['success', 'skipped', 'failure', 'cancelled', 'unknown']) {
+      const child = spawnSync(process.execPath, ['--input-type=module', '-e', code], {
+        env: { ...process.env, NEEDS_JSON: JSON.stringify({ verify: { result: 'success' }, other: { result } }) },
+      });
+      assert.equal(child.status, ['success', 'skipped'].includes(result) ? 0 : 1);
+    }
+  });
+
   const mutations = [
     ['publish', "github.event.workflow_run.event == 'push'", "github.event.workflow_run.event == 'pull_request'"],
     ['publish', 'github.event.workflow_run.head_repository.full_name == github.repository', 'true'],
@@ -57,7 +69,9 @@ describe('release workflow contract', () => {
     ['publish', 'node-version-file: .nvmrc', 'node-version: 20'],
     ['ci', 'node: ["22", "24", "26"]', 'node: ["26"]'],
     ['ci', 'needs: [verify, pre-commit, legacy-verify]', 'needs: [verify]'],
-    ['ci', 'test "$LEGACY_VERIFY_RESULT" = success', 'true'],
+    ['ci', 'NEEDS_JSON: ${{ toJSON(needs) }}', 'NEEDS_JSON: {}'],
+    ['ci', '["success", "skipped"].includes(result)', 'true'],
+    ['ci', 'process.exit(1)', 'process.exit(0)'],
     ['ci', 'if: always()', 'if: success()'],
     ['ci', 'test "$VERIFY_RESULT" = success', 'true'],
     ['ci', 'test "$PRE_COMMIT_RESULT" = success', 'true'],

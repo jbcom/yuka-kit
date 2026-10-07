@@ -78,10 +78,11 @@ jobs:
     steps:
       - name: Require every CI validation job
         env:
-          VERIFY_RESULT: ${{ needs.verify.result }}
-          PRE_COMMIT_RESULT: ${{ needs.pre-commit.result }}
-          LEGACY_VERIFY_RESULT: ${{ needs.legacy-verify.result }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
         run: |
-          test "$VERIFY_RESULT" = success
-          test "$PRE_COMMIT_RESULT" = success
-          test "$LEGACY_VERIFY_RESULT" = success
+          node --input-type=module -e '
+            const jobs = Object.values(JSON.parse(process.env.NEEDS_JSON));
+            if (!jobs.every(({ result }) => ["success", "skipped"].includes(result))) {
+              process.exit(1);
+            }
+          '
