@@ -58,6 +58,9 @@ jobs:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           tag="$(gh api "repos/$REPOSITORY/releases" --paginate --jq ".[] | select(.target_commitish == \"$HEAD_SHA\") | .tag_name" | head -n 1)"
+          if [ -z "$tag" ]; then
+            echo "::notice::No release was created for this commit; skipping npm publication."
+          fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: steps.release.outputs.tag != ''

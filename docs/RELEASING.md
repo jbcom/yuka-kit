@@ -45,4 +45,8 @@ consumer smoke tests, publint, export/type resolution and the Sourcey build.
 
 Branch policy tooling lives in `scripts/apply-branch-ruleset.mjs`. Its defaults
 are this repository and the four checks `CI / gate`, `title`,
-`Repository Policy / gate` and `Dependency Review / gate`.
+  `Repository Policy / gate` and `Dependency Review / gate`.
+
+Repository Actions policy requires SHA pinning. Its third-party allowlist must
+include the exact pinned release-please, pnpm setup and semantic PR title actions
+used by these workflows; GitHub-owned actions remain allowed.
