@@ -1,6 +1,6 @@
 {
   "name": "yuka-kit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared Yuka AI toolkit with deterministic encounters, NPC routines, class governors, and RPGJS Solo command-driven playthroughs.",
   "type": "module",
   "license": "MIT",

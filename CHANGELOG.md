@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/jbcom/yuka-kit/compare/1.0.0...1.0.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* declare the supported Node lines and enforce house CI policy ([0808420](https://github.com/jbcom/yuka-kit/commit/08084207d3b1284277ccadc8d35b88fc7335f288))
+* declare the supported Node lines and test each in CI ([53ba128](https://github.com/jbcom/yuka-kit/commit/53ba128db9f612c53c404b68e2b85e71c7dccfc9))
+
 ## [1.0.0](https://github.com/jbcom/yuka-kit/compare/0.21.0...1.0.0) (2026-10-07)
 
 
