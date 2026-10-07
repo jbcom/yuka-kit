@@ -1,6 +1,6 @@
 /**
- * Phase-aware boss AI using yuka CompositeGoal trees (from bok's bossBrain,
- * decoupled from bok's content schema via BossPhaseConfig).
+ * Phase-aware boss AI using yuka CompositeGoal trees, configured through
+ * BossPhaseConfig rather than any game's content schema.
  *
  * Each boss gets a BossBrain (extends Think) that switches behavior at
  * health-percentage thresholds. Evaluators compete via desirability scores

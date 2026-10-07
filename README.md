@@ -1,4 +1,8 @@
-# @jbdevprimary/yuka-kit
+# yuka-kit
+
+[![npm](https://img.shields.io/npm/v/yuka-kit)](https://www.npmjs.com/package/yuka-kit)
+[![CI](https://github.com/jbcom/yuka-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/jbcom/yuka-kit/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/yuka-kit)](LICENSE)
 
 Shared game-AI toolkit wrapping [yuka.js](https://mugen87.github.io/yuka/) for
 browser and Node games: steering helpers, combat FSM states, goal-driven
@@ -13,39 +17,24 @@ for guided integration, API catalogue, persistence rules, and the agentic
 command boundary. The site also publishes `llms.txt` and `llms-full.txt` from
 the same reviewed documentation graph.
 
-This repository is the source of truth for the package. Version
-`0.1.0` restored the originally published artifact; `0.2.0` added the production
-systems needed by RPGJS Solo games, `0.3.0` added structured combat bindings,
-`0.4.0` added authoritative command-availability observations, `0.7.0`
-added versioned routine and combat-FSM state, `0.8.0` added actionable
-Yuka-arbitrated combat tactics, `0.14.0` makes Mage pack defense react to every
-nearby telegraph; `0.17.0` adds strict authored-state routine selection and
-public cross-map action intents; `0.18.0` adds the strict deterministic
-proposal and final-dispatch boundary; and `0.19.0` adds closed, atomic
-persistence validation for package-owned AI snapshots. Patch release `0.19.1`
-aligns the runtime dependency and complete release toolchain to their current
-Node 24-compatible versions and adds a fail-closed immutable release path. All
-releases retain the public Node.js `>=24` compatibility contract and pin the
-current underlying Yuka release. Repository verification and publication use
-the exact current Node.js 24 LTS toolchain recorded in `.nvmrc` and CI.
+This repository is the source of truth for the package; see
+[CHANGELOG.md](CHANGELOG.md) for what each release added. The public Node.js
+`>=24` compatibility contract and the exact peer on the current Yuka release
+hold across releases. Repository verification and publication use the Node.js
+24 LTS toolchain recorded in `.nvmrc` and CI.
 
-Extracted and generalized from production yuka integrations, absorbing:
-
-- flocking/separation/obstacle-avoidance steering helpers
-- binary-heap grid A\* pathfinding + a goal/evaluator vocabulary
-- a raycast-perception → FSM pattern
-- waypoint path-following defaults
+Coming from an earlier name of this package? See [MIGRATION.md](MIGRATION.md).
 
 ## Install
 
 ```sh
-pnpm add @jbdevprimary/yuka-kit yuka
+pnpm add yuka-kit yuka
 # koota only if you use the ECS bridge:
 pnpm add koota
 ```
 
 `yuka` (`0.7.8`) is an exact peer dependency. `koota` is an **optional** peer — only
-needed for the `@jbdevprimary/yuka-kit/koota` entry point.
+needed for the `yuka-kit/koota` entry point.
 
 yuka ships no TypeScript types; this package bundles an ambient
 `declare module 'yuka'` that consumers get transitively. If your repo has its
@@ -60,7 +49,7 @@ Everything except `koota/` is ECS-agnostic and operates on plain yuka
 ### core
 
 ```ts
-import { createVehicle, createCombatVehicle, createEntityManager, manage, stepAI } from '@jbdevprimary/yuka-kit';
+import { createVehicle, createCombatVehicle, createEntityManager, manage, stepAI } from 'yuka-kit';
 
 const enemy = createCombatVehicle(
   { speed: 3 }, // any config object with a speed works (mass/maxForce optional)
@@ -79,8 +68,8 @@ stepAI(manager, dt, brainRegistry); // combat FSMs, steering/entities, then GOAP
 
 ### fsm
 
-`PatrolState`, `ChaseState`, `AttackState`, `DeadState`, `FleeState` — bok's
-combat states, parameterized (ranges, cooldowns, and transition state ids are
+`PatrolState`, `ChaseState`, `AttackState`, `DeadState`, `FleeState` — combat
+states, parameterized (ranges, cooldowns, and transition state ids are
 constructor options; targets injected via `setTarget`). `createFsm(vehicle,
 states, initial)` wires a StateMachine; `getStateName(fsm)` resolves the
 current state's registration id.
@@ -102,17 +91,17 @@ updates every managed combat FSM before steering; custom loops can call
 - `clearDirectionalBehaviors(vehicle)` — drops seek/flee/pursuit/wander, keeps group behaviors
 - one-liners: `seek`, `flee`, `arrive`, `pursuit`, `evade`, `wander` (add + return the behavior)
 - `followWaypoints(vehicle, waypoints, options?)` — Path + FollowPathBehavior +
-  OnPathBehavior with voxel-realms' tuned defaults; returns a handle with
+  OnPathBehavior with tuned defaults; returns a handle with
   `finished()`/`clear()`. Note yuka's `finished()` flips true when the index
   *reaches* the final waypoint (still traveling to it).
 
 ### goals
 
-- Entity-tag evaluators (bok style — the game loop refreshes
+- Entity-tag evaluators (the game loop refreshes
   `setTargetPosition(entity, pos)` / `setHealthPct(entity, pct)` each frame):
   `ChaseEvaluator`, `MeleeAttackEvaluator`, `KeepDistanceEvaluator`,
   `WanderEvaluator`, `FleeEvaluator`.
-- Getter-injected evaluators (goats-in-hell style):
+- Getter-injected evaluators (accessor functions passed at construction):
   `AggressionEvaluator`, `SurvivalEvaluator`, `BossPhaseEvaluator`.
 - `createBrain(entity, evaluators)` — Think + `_brain` back-reference tag.
 - `BrainRegistry` — per-world brain lifecycle (register/unregister/updateAll/reset).
@@ -129,16 +118,15 @@ updates every managed combat FSM before steering; custom loops can call
 (`melee`/`ranged`/`pack`/`ambush`/`boss`/`passive`) to evaluator bundles;
 `createBrainForType(entity, aiType, bossPhases?)` builds the brain (boss +
 phases ⇒ full `BossBrain`). Games keep their own content-id → AIType lookup
-(like bok's `ENEMY_AI_TYPES`).
+(for example a table keyed by enemy id).
 
 ### combat tactics
 
 `TacticalCombatAgent` turns melee, ranged, charge, and ambush observations
 into command-neutral `AgentIntent`s through Yuka `Think`/`GoalEvaluator`
 arbitration. Detection, attack bands, survival retreat, cooldown readiness,
-and each game's action payloads remain explicit inputs. The behavior model is
-extracted from A Good Old-Fashioned Adventure's authored enemy loop rather
-than duplicating that loop in every game.
+and each game's action payloads remain explicit inputs, so one tactics model
+serves every game rather than each reimplementing its own enemy loop.
 
 `BossTacticalAgent` composes the existing phase-aware `BossBrain` and converts
 its winning behavior into movement, melee, barrage, summon, or orbit intents.
@@ -174,7 +162,7 @@ cells start→end inclusive, `[]` when unreachable.
 - `hasAabbProjectileClearance2D(from, to, obstacles, options)` — strict
   radius-aware muzzle-to-impact clearance for ranged AI; unlike visibility,
   a projectile spawned inside a padded obstacle is blocked.
-- `applyPerception(seen, fsm, stateWhenSeen)` — the aethermoor raycast→FSM
+- `applyPerception(seen, fsm, stateWhenSeen)` — the raycast→FSM
   pattern: transition once on sighting.
 
 #### light-scaled vision
@@ -315,7 +303,7 @@ selection is a separate opt-in contract:
 import {
   RoutineAgent,
   type StateAwareRoutineSchedule,
-} from '@jbdevprimary/yuka-kit';
+} from 'yuka-kit';
 
 const schedule: StateAwareRoutineSchedule = {
   entries: [
@@ -426,7 +414,7 @@ import {
   deriveDeterministicIdentity,
   selectSemanticCommandProposal,
   SEMANTIC_COMMAND_PROPOSAL_SCHEMA,
-} from '@jbdevprimary/yuka-kit';
+} from 'yuka-kit';
 
 const streamId = deriveDeterministicIdentity('stream', [
   'npc-routine', 'policy:smith', 'entity:smith', 'scope:forge',
@@ -465,7 +453,7 @@ map to the engine's public guard action with `{ active: false }`. Observing
 startup telegraph, then release it through the public action before resuming
 movement.
 
-### RPGJS Solo (separate entry: `@jbdevprimary/yuka-kit/solo`)
+### RPGJS Solo (separate entry: `yuka-kit/solo`)
 
 `SoloCommandAdapter` maps the Yuka XZ plane to RPGJS Solo XY commands and
 forces `source: 'ai'`. `runGovernedPlaythrough()` repeatedly observes the real
@@ -489,7 +477,7 @@ payloads, and extra fields fail before Solo dispatch.
 import {
   createAICommandDispatchEnvelope,
   SoloCommandAdapter,
-} from '@jbdevprimary/yuka-kit/solo';
+} from 'yuka-kit/solo';
 
 const adapter = new SoloCommandAdapter(runtime);
 if (selected) {
@@ -515,8 +503,8 @@ legacy integrations, including their explicit `transfer-map` support. They do
 not claim the strict proposal guarantees.
 
 ```ts
-import { ClassGovernor } from '@jbdevprimary/yuka-kit';
-import { SoloCommandAdapter, runGovernedPlaythrough } from '@jbdevprimary/yuka-kit/solo';
+import { ClassGovernor } from 'yuka-kit';
+import { SoloCommandAdapter, runGovernedPlaythrough } from 'yuka-kit/solo';
 
 const governor = new ClassGovernor({
     className: 'hunter',
@@ -567,7 +555,7 @@ stepAI(entityManager, 1 / 60);
 bridge.dispatchToSolo(enemyVehicle, runtime.getEntity('slime'), combat.canMove('slime').available);
 ```
 
-### GOAP (separate entry: `@jbdevprimary/yuka-kit/goap`)
+### GOAP (separate entry: `yuka-kit/goap`)
 
 Goal-oriented action planning on top of Yuka's goal system. A `Think`
 evaluator picks *what* to do; the planner works out *how*, as a sequence of
@@ -576,7 +564,7 @@ actions; the plan runs as Yuka goals, one action at a time.
 ```ts
 import {
   GoapActionRegistry, GoapGoalEvaluator, planGoap,
-} from '@jbdevprimary/yuka-kit/goap';
+} from 'yuka-kit/goap';
 
 const actions = new GoapActionRegistry<Companion>();
 actions.register({
@@ -675,10 +663,10 @@ until the plan resumes). The step's Yuka goal is created fresh when the plan
 resumes, the same step-level granularity as `restoreFsmState`. `validateGoapPlanSnapshot(value)` validates without
 restoring.
 
-### koota (separate entry: `@jbdevprimary/yuka-kit/koota`)
+### koota (separate entry: `yuka-kit/koota`)
 
 ```ts
-import { AIBridge, AIState, YukaRef, AIMemory, Intent, EnemyType, BossType } from '@jbdevprimary/yuka-kit/koota';
+import { AIBridge, AIState, YukaRef, AIMemory, Intent, EnemyType, BossType } from 'yuka-kit/koota';
 
 const bridge = new AIBridge({ Position, Velocity, Health }); // YOUR game's traits
 

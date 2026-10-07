@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { describe, it } from 'node:test';
 import { validateReleaseWorkflows } from './release-workflow-contract.mjs';
+import { assertPublishedArtifact } from './verify-published-artifact.mjs';
 
 const ci = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
 const publish = await readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
@@ -9,6 +10,21 @@ const manifest = JSON.parse(await readFile(new URL('../package.json', import.met
 const nvmrc = (await readFile(new URL('../.nvmrc', import.meta.url), 'utf8')).trim();
 
 describe('release workflow contract', () => {
+  it('rejects existing versions with foreign identity or different published bytes', () => {
+    const integrity = 'sha512-YWJjZA==';
+    const published = {
+      name: manifest.name, version: manifest.version,
+      repository: manifest.repository, dist: { integrity },
+    };
+    assert.doesNotThrow(() => assertPublishedArtifact(manifest, published, { integrity }));
+    assert.throws(() => assertPublishedArtifact(manifest, { ...published, name: 'other' }, { integrity }), /name differs/);
+    assert.throws(() => assertPublishedArtifact(manifest, { ...published, version: '0.0.0' }, { integrity }), /version differs/);
+    assert.throws(() => assertPublishedArtifact(manifest, { ...published, repository: { url: 'https://example.com/other' } }, { integrity }), /repository differs/);
+    assert.throws(() => assertPublishedArtifact(manifest, { ...published, dist: { integrity: 'sha512-ZGlmZmVyZW50' } }, { integrity }), /artifact differs/);
+    assert.throws(() => assertPublishedArtifact(manifest, { ...published, dist: {} }, { integrity }), /artifact differs/);
+    assert.throws(() => assertPublishedArtifact(manifest, published, {}), /local pack integrity is missing/);
+    assert.throws(() => validateReleaseWorkflows({ ci, publish: publish.replace('node scripts/verify-published-artifact.mjs', '') }), /artifact identity and integrity/);
+  });
   it('separates the public Node compatibility range from the exact execution toolchain', () => {
     assert.equal(manifest.engines.node, '>=24');
     assert.equal(nvmrc, '24.19.0');
@@ -17,7 +33,7 @@ describe('release workflow contract', () => {
   });
 
   it('publishes publicly with provenance under the extracted name', () => {
-    assert.equal(manifest.name, '@jbdevprimary/yuka-kit');
+    assert.equal(manifest.name, 'yuka-kit');
     assert.equal(manifest.publishConfig.access, 'public');
     assert.equal(manifest.publishConfig.provenance, true);
     assert.equal(manifest.license, 'MIT');
@@ -46,11 +62,12 @@ describe('release workflow contract', () => {
   });
 
   it('rejects publication that skips the verification gate', () => {
-    const gateRemoved = publish.replace('      - run: pnpm verify\n', '');
+    const gateStep = "      - if: steps.registry.outputs.publish == 'true'\n        run: pnpm verify\n";
+    const gateRemoved = publish.replace(gateStep, '');
     assert.throws(() => validateReleaseWorkflows({ ci, publish: gateRemoved }), /full gate before publication/);
     const gateAfterPublish = publish
-      .replace('      - run: pnpm verify\n', '')
-      .replace('      - name: Publish', '      - run: pnpm verify\n      - name: Publish')
+      .replace(gateStep, '')
+      .replace('      - name: Publish', `${gateStep}      - name: Publish`)
       .replace(
         'run: pnpm publish --access public --provenance --no-git-checks',
         'run: pnpm publish --access public --provenance --no-git-checks # moved',
@@ -102,14 +119,31 @@ describe('release workflow contract', () => {
     );
   });
 
-  it('rejects any surviving private-registry or pre-extraction reference', () => {
+  it('rejects any surviving private-registry reference', () => {
     assert.throws(
-      () => validateReleaseWorkflows({ ci, publish: publish.replace('registry-url: https://registry.npmjs.org', 'registry-url: https://redacted-private-registry.example/api/packages/arcade-cabinet/npm/') }),
-      /private Gitea registry/,
+      () => validateReleaseWorkflows({ ci, publish: publish.replace('registry-url: https://registry.npmjs.org', 'registry-url: https://redacted-private-registry.example/api/packages/example/npm/') }),
+      /private registry/,
     );
+  });
+
+  it('never publishes a version twice or fails on a package that is not on npm yet', () => {
+    // Dropping the gate from any publishing step would double-publish.
     assert.throws(
-      () => validateReleaseWorkflows({ ci: `${ci}\n      # @arcade-cabinet/ai-yuka\n`, publish }),
-      /pre-extraction package scope/,
+      () => validateReleaseWorkflows({
+        ci,
+        publish: publish.replace("      - name: Publish\n        if: steps.registry.outputs.publish == 'true'\n", '      - name: Publish\n'),
+      }),
+      /gated corepack, install, verify, publish and verification/,
+    );
+    // Without the E404 split, a missing package would fail the whole job.
+    assert.throws(
+      () => validateReleaseWorkflows({ ci, publish: publish.replaceAll('E404', 'E000') }),
+      /distinguish a missing package from a registry failure/,
+    );
+    // The skip must stay visible.
+    assert.throws(
+      () => validateReleaseWorkflows({ ci, publish: publish.replaceAll('::warning::', '::debug::') }),
+      /visible warning/,
     );
   });
 });

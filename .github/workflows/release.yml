@@ -53,21 +53,58 @@ jobs:
           registry-url: https://registry.npmjs.org
           # setup-node otherwise discovers pnpm before Corepack has supplied it.
           package-manager-cache: false
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm verify
+      - name: Check the registry
+        id: registry
+        # A version that is already on npm is never published twice. A package
+        # that does not exist on npm at all has no trusted publisher yet, so its
+        # first publication is made by hand from this release tag (see
+        # docs/RELEASING.md); that case is a visible warning, not a failed job.
+        # Any other lookup failure fails the job.
+        run: |
+          package_name="$(node -p "require('./package.json').name")"
+          package_version="$(node -p "require('./package.json').version")"
+          if lookup="$(npm view "${package_name}@${package_version}" version --registry=https://registry.npmjs.org 2>&1)"; then
+            corepack enable
+            pnpm install --frozen-lockfile
+            pnpm verify
+            node scripts/verify-published-artifact.mjs
+            echo "::notice::${package_name}@${package_version} is already on npm; skipping publication."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          elif grep -q 'E404' <<<"${lookup}"; then
+            if package_lookup="$(npm view "${package_name}" name --registry=https://registry.npmjs.org 2>&1)"; then
+              echo "publish=true" >> "$GITHUB_OUTPUT"
+            elif grep -q 'E404' <<<"${package_lookup}"; then
+              echo "::warning::${package_name} does not exist on npm yet, so it has no trusted publisher; publish ${package_version} by hand from this tag."
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "${package_lookup}" >&2
+              exit 1
+            fi
+          else
+            echo "${lookup}" >&2
+            exit 1
+          fi
+      - if: steps.registry.outputs.publish == 'true'
+        run: corepack enable
+      - if: steps.registry.outputs.publish == 'true'
+        run: pnpm install --frozen-lockfile
+      - if: steps.registry.outputs.publish == 'true'
+        run: pnpm verify
       - name: Publish
-        # NPM_TOKEN is only needed until the package exists on npm. Once it does
-        # and trusted publishing is configured for this repo, drop the env block
-        # and the id-token permission alone is sufficient.
+        if: steps.registry.outputs.publish == 'true'
+        # NPM_TOKEN is only needed until trusted publishing is configured for
+        # this repo; then drop the env block and the id-token permission alone
+        # is sufficient.
         run: pnpm publish --access public --provenance --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Verify public registry publication
+        if: steps.registry.outputs.publish == 'true'
         run: |
+          package_name="$(node -p "require('./package.json').name")"
           package_version="$(node -p "require('./package.json').version")"
           for attempt in 1 2 3 4 5 6; do
-            if npm view "@jbdevprimary/yuka-kit@${package_version}" version --registry=https://registry.npmjs.org | grep -Fx "${package_version}"; then
+            if npm view "${package_name}@${package_version}" version --registry=https://registry.npmjs.org | grep -Fx "${package_version}"; then
               exit 0
             fi
             if [ "$attempt" -lt 6 ]; then

@@ -16,7 +16,7 @@ const act = (
     minCost?: number,
 ): GoapAction => ({ id, cost, preconditions, effects, ...(minCost === undefined ? {} : { minCost }) });
 
-// The canonical concrete-vermin scenario the planner was ported from.
+// A reference scenario: arm up, close in, then finish the enemy by melee or by gun.
 const brigand: GoapAction[] = [
     act('pickupAxe', 2, { hasWeapon: false }, { hasWeapon: true }),
     act('approach', 1, { inRange: false }, { inRange: true }),

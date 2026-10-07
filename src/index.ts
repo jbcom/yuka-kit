@@ -1,10 +1,10 @@
 /// <reference path="./yuka.d.ts" />
 /**
- * @jbdevprimary/yuka-kit — shared game-AI toolkit over yuka.js.
+ * yuka-kit — shared game-AI toolkit over yuka.js.
  *
  * ECS-agnostic: everything here operates on plain yuka Vehicle/GameEntity
  * objects. The koota bridge lives behind the separate
- * `@jbdevprimary/yuka-kit/koota` entry point.
+ * `yuka-kit/koota` entry point.
  *
  * 2D games follow yuka's own documented convention: use Vector3 with y
  * pinned to 0 — there is no separate 2D/3D API split.
