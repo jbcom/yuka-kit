@@ -28,7 +28,7 @@ describe('goap entry-point barrel', () => {
         for (const name of [
             'planGoap', 'validateGoapAction', 'compareGoapIds', 'GoapActionRegistry', 'GoapPlanGoal',
             'GoapGoalEvaluator', 'validateGoapPlanSnapshot', 'satisfiesGoapConditions', 'conditionHolds',
-            'countUnsatisfied', 'applyGoapEffects', 'goapStateKey',
+            'countUnsatisfied', 'applyGoapEffects', 'goapStateKey', 'pursueGoap',
         ] as const) {
             expect(typeof api[name], name).toBe('function');
         }

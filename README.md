@@ -665,6 +665,18 @@ until the plan resumes). The step's Yuka goal is created fresh when the plan
 resumes, the same step-level granularity as `restoreFsmState`. `validateGoapPlanSnapshot(value)` validates without
 restoring.
 
+**`pursueGoap(goal, steps, sense, { context, maxSteps, stallLimit, onStep?, signal?, maxExpansions? })`**
+is the asynchronous, frame-free counterpart of `GoapPlanGoal`, for an actor
+whose steps are awaited work rather than goals ticked by `update()` (a test
+driver playing a game through its real input, a bot calling a service). Each
+`GoapStep` is a `GoapAction` with `run(context): Promise<void>`. It senses,
+plans from what it sensed, runs only the plan's first step, and senses again,
+so the world decides every move. It resolves `{ reached: true, steps, last }`
+once the goal holds, or `{ reached: false, reason, steps, last }` with
+`no-plan`, `step-limit` (`maxSteps` taken), `stalled` (`stallLimit` steps
+running left the sensed state unchanged) or `aborted` (checked between steps;
+a running step is never interrupted). A step that throws rejects it.
+
 ### koota (separate entry: `yuka-kit/koota`)
 
 ```ts

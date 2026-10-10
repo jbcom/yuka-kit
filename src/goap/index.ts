@@ -3,8 +3,9 @@
  * @module yuka-kit/goap
  * Goal-oriented action planning over Yuka's goal system: a deterministic A*
  * planner over world-state predicates, an action registry that equipment can
- * contribute to, and an executor that runs plans as Yuka composite goals
- * chosen by `Think` through `GoapGoalEvaluator`.
+ * contribute to, an executor that runs plans as Yuka composite goals
+ * chosen by `Think` through `GoapGoalEvaluator`, and `pursueGoap`, its
+ * asynchronous frame-free counterpart for steps that are awaited work.
  */
 export {
     applyGoapEffects,
@@ -43,3 +44,4 @@ export {
     type GoapPlanSnapshot,
     type GoapPlanStatus,
 } from './executor.js';
+export { pursueGoap, type GoapPursueOptions, type GoapPursueResult, type GoapStep } from './pursue.js';

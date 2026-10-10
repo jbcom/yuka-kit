@@ -29,7 +29,7 @@ game rule; the library intentionally avoids a single opaque AI controller.
 | --- | --- |
 | Combat state machine | `createFsm`, `PatrolState`, `ChaseState`, `AttackState`, `FleeState`, `DeadState` |
 | Generic goals | `createBrain`, `BrainRegistry`, evaluators, `createBrainForType` |
-| Action planning | `yuka-kit/goap`: `planGoap`, `GoapActionRegistry`, `GoapPlanGoal`, `GoapGoalEvaluator` |
+| Action planning | `yuka-kit/goap`: `planGoap`, `GoapActionRegistry`, `GoapPlanGoal`, `GoapGoalEvaluator`, `pursueGoap` |
 | Boss phases | `createBossBrain`, `BossBrain`, `BossPhaseConfig` |
 | Combat proposals | `TacticalCombatAgent`, `BossTacticalAgent` |
 | Class playthrough decisions | `createClassGovernor`, `ClassGovernor` |
