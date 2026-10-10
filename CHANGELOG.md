@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/jbcom/yuka-kit/compare/1.0.1...1.1.0) (2026-10-10)
+
+
+### Features
+
+* **goap:** pursueGoap, an async sense-plan-act loop ([e90e0c3](https://github.com/jbcom/yuka-kit/commit/e90e0c33be76cfe09a7518d21a8fa2133ad5dcbe))
+* **goap:** pursueGoap, an async sense-plan-act loop for steps that are awaited work ([2f5ddf5](https://github.com/jbcom/yuka-kit/commit/2f5ddf5016e6c1a8143b20cc8c8f1c1d6904bc0a))
+
 ## [1.0.1](https://github.com/jbcom/yuka-kit/compare/1.0.0...1.0.1) (2026-10-07)
 
 
