@@ -231,6 +231,31 @@ describe('anonymous exact-version public registry verification', () => {
     }), /processing deadline/);
   });
 
+  for (const stage of ['request', 'JSON']) {
+    for (const elapsedAtFailure of [19, 20]) {
+      it(`reports ${stage} errors ${elapsedAtFailure < 20 ? 'before' : 'at'} the deadline accurately`, async () => {
+        let elapsed = 0;
+        const failure = new Error(`${stage} failed`);
+        const fail = async () => { elapsed = elapsedAtFailure; throw failure; };
+        await assert.rejects(verifyPublicVersion(manifest, packed, {
+          waitMs: 20, now: () => elapsed,
+          fetchImpl: stage === 'request' ? fail : async () => ({ status: 200, json: fail }),
+          pause: async () => { assert.fail('errors must never wait'); },
+        }), elapsedAtFailure < 20 ? (error) => error === failure : /processing deadline exceeded/);
+      });
+    }
+  }
+
+  it('fails cleanly when the deadline expires before scheduling the pause', async () => {
+    let elapsed = 0;
+    await assert.rejects(verifyPublicVersion(manifest, packed, {
+      waitMs: 20, now: () => elapsed,
+      fetchImpl: async () => response(404),
+      log: () => { elapsed = 21; },
+      pause: async () => { assert.fail('an expired deadline must not schedule a pause'); },
+    }), /processing deadline exceeded/);
+  });
+
   for (const status of [301, 401, 403, 429, 500, 503]) {
     it(`fails closed immediately on HTTP ${status}`, async () => {
       let calls = 0;

@@ -47,9 +47,15 @@ export const verifyPublicVersion = async (manifest, packed, {
   for (;;) {
     const remaining = deadline - now();
     if (waitMs > 0 && remaining <= 0) throw new Error('Public npm publication processing deadline exceeded');
-    const published = await readPublishedVersion(manifest, {
-      fetchImpl, timeoutMs: waitMs > 0 ? Math.min(10_000, remaining) : 10_000,
-    });
+    let published;
+    try {
+      published = await readPublishedVersion(manifest, {
+        fetchImpl, timeoutMs: waitMs > 0 ? Math.min(10_000, remaining) : 10_000,
+      });
+    } catch (error) {
+      if (waitMs > 0 && now() >= deadline) throw new Error('Public npm publication processing deadline exceeded', { cause: error });
+      throw error;
+    }
     // Include both transport and JSON parsing in the processing deadline.
     if (waitMs > 0 && now() >= deadline) throw new Error('Public npm publication processing deadline exceeded');
     if (published !== null) {
@@ -58,7 +64,9 @@ export const verifyPublicVersion = async (manifest, packed, {
     }
     if (waitMs === 0) return false;
     log(`Public npm version pending: HTTP 404; processing age ${now() - started}ms.`);
-    await pause(Math.min(intervalMs, deadline - now()));
+    const pauseMs = Math.min(intervalMs, deadline - now());
+    if (pauseMs <= 0) throw new Error('Public npm publication processing deadline exceeded');
+    await pause(pauseMs);
   }
 };
 
