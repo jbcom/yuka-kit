@@ -17,7 +17,7 @@ export function createBrain(
 }
 /**
  * BrainRegistry — manages Think brain lifecycle for all AI-controlled
- * entities (from goats-in-hell). Each entity gets a brain registered by id;
+ * entities. Each entity gets a brain registered by id;
  * the registry ticks all brains once per frame.
  *
  * Instantiate one per world/scene — deliberately not a module singleton so

@@ -16,8 +16,7 @@ export function manage<T extends GameEntity>(manager: EntityManager, entity: T):
     return entity;
 }
 /**
- * Advance one AI tick: steering/entity update first, then goal arbitration
- * (the order goats-in-hell's brain loop established).
+ * Advance one AI tick: steering/entity update first, then goal arbitration.
  */
 export function stepAI(
     manager: EntityManager,

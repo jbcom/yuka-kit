@@ -1,6 +1,6 @@
 {
-  "name": "@jbdevprimary/yuka-kit",
-  "version": "0.20.2",
+  "name": "yuka-kit",
+  "version": "1.1.0",
   "description": "Shared Yuka AI toolkit with deterministic encounters, NPC routines, class governors, and RPGJS Solo command-driven playthroughs.",
   "type": "module",
   "license": "MIT",
@@ -10,7 +10,7 @@
     "url": "git+https://github.com/jbcom/yuka-kit.git"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=22"
   },
   "packageManager": "pnpm@11.21.0",
   "publishConfig": {
@@ -20,6 +20,7 @@
   "files": [
     "dist",
     "CHANGELOG.md",
+    "MIGRATION.md",
     "README.md"
   ],
   "main": "./dist/cjs/index.js",
@@ -27,6 +28,9 @@
   "types": "./dist/esm/index.d.ts",
   "typesVersions": {
     "*": {
+      "goap": [
+        "dist/esm/goap/index.d.ts"
+      ],
       "koota": [
         "dist/esm/koota/index.d.ts"
       ],
@@ -44,6 +48,16 @@
       "require": {
         "types": "./dist/cjs/index.d.cts",
         "default": "./dist/cjs/index.js"
+      }
+    },
+    "./goap": {
+      "import": {
+        "types": "./dist/esm/goap/index.d.ts",
+        "default": "./dist/esm/goap/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/goap/index.d.cts",
+        "default": "./dist/cjs/goap/index.js"
       }
     },
     "./koota": {
@@ -81,11 +95,11 @@
     "test:release-workflows": "node --test scripts/release-workflows.tests.mjs",
     "verify:dependency-currency": "node scripts/dependency-currency-bootstrap/verify.mjs",
     "smoke:consumer": "node scripts/smoke-fresh-consumer.mjs",
-    "docs:build": "pnpm --filter @jbdevprimary/yuka-kit-docs run build",
-    "verify": "pnpm run verify:dependency-currency && pnpm run test:dependency-currency-bootstrap && pnpm run test:release-workflows && pnpm run typecheck && pnpm run test:coverage && pnpm run build && node scripts/smoke-package.mjs && pnpm run smoke:consumer && pnpm run docs:build"
+    "docs:build": "pnpm --filter yuka-kit-docs run build",
+    "verify": "pnpm run verify:dependency-currency && pnpm run test:dependency-currency-bootstrap && pnpm run test:release-workflows && pnpm run typecheck && pnpm run test:coverage && pnpm run build && node scripts/smoke-package.mjs && pnpm run smoke:consumer && pnpm dlx publint && pnpm dlx @arethetypeswrong/cli --pack . && pnpm run docs:build"
   },
   "dependencies": {
-    "@noble/hashes": "2.3.0"
+    "@noble/hashes": "2.4.0"
   },
   "peerDependencies": {
     "koota": "0.6.6",
@@ -97,13 +111,13 @@
     }
   },
   "devDependencies": {
-    "@types/node": "24.13.3",
-    "@vitest/coverage-v8": "4.1.10",
+    "@types/node": "26.6.4",
+    "@vitest/coverage-v8": "5.0.3",
     "esbuild": "0.28.2",
     "koota": "0.6.6",
     "typescript": "7.0.2",
-    "vite": "8.2.1",
-    "vitest": "4.1.10",
+    "vite": "8.3.1",
+    "vitest": "5.0.3",
     "yuka": "0.7.8"
   },
   "bugs": {

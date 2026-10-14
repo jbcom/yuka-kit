@@ -44,10 +44,9 @@ export const highestVersionFromNpmView = (value, label) => {
   return version;
 };
 
+// A package that is not on the public registry fails closed at the `npm view`
+// lookup in verify.mjs, so only the declared range needs checking here.
 export const assertPublicRegistryEdge = ({ name, spec }) => {
-  if (name.startsWith('@arcade-cabinet/')) {
-    throw new Error(`temporary public oracle refuses private-package edge ${name}`);
-  }
   if (typeof spec !== 'string' || spec.length === 0 || /^(?:file|git|https?|link|workspace):/.test(spec)) {
     throw new Error(`temporary public oracle cannot prove ${name}@${String(spec)} against npm latest`);
   }

@@ -32,11 +32,11 @@ describe('temporary recursive dependency-currency oracle', () => {
     assert.throws(() => highestVersionFromNpmView([], 'empty'), /did not resolve/);
   });
 
-  it('fails closed for private and non-registry edges', () => {
+  it('fails closed for non-registry edges', () => {
     assert.doesNotThrow(() => assertPublicRegistryEdge({ name: 'yuka', spec: '0.7.8' }));
     assert.throws(
-      () => assertPublicRegistryEdge({ name: '@arcade-cabinet/rules', spec: '1.0.0' }),
-      /refuses private-package edge/,
+      () => assertPublicRegistryEdge({ name: 'local-package', spec: 'file:../local-package' }),
+      /cannot prove/,
     );
     assert.throws(
       () => assertPublicRegistryEdge({ name: 'local-package', spec: 'workspace:*' }),

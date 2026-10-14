@@ -1,5 +1,55 @@
 # Changelog
 
+## [1.1.0](https://github.com/jbcom/yuka-kit/compare/1.0.1...1.1.0) (2026-10-10)
+
+
+### Features
+
+* **goap:** pursueGoap, an async sense-plan-act loop ([e90e0c3](https://github.com/jbcom/yuka-kit/commit/e90e0c33be76cfe09a7518d21a8fa2133ad5dcbe))
+* **goap:** pursueGoap, an async sense-plan-act loop for steps that are awaited work ([2f5ddf5](https://github.com/jbcom/yuka-kit/commit/2f5ddf5016e6c1a8143b20cc8c8f1c1d6904bc0a))
+
+## [1.0.1](https://github.com/jbcom/yuka-kit/compare/1.0.0...1.0.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* declare the supported Node lines and enforce house CI policy ([0808420](https://github.com/jbcom/yuka-kit/commit/08084207d3b1284277ccadc8d35b88fc7335f288))
+* declare the supported Node lines and test each in CI ([53ba128](https://github.com/jbcom/yuka-kit/commit/53ba128db9f612c53c404b68e2b85e71c7dccfc9))
+
+## [1.0.0](https://github.com/jbcom/yuka-kit/compare/0.21.0...1.0.0) (2026-10-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* converge on the unscoped yuka-kit package ([#23](https://github.com/jbcom/yuka-kit/issues/23))
+* install and import `yuka-kit` instead of `@jbdevprimary/yuka-kit`; see MIGRATION.md.
+
+### Features
+
+* converge on the unscoped yuka-kit package ([#23](https://github.com/jbcom/yuka-kit/issues/23)) ([4ed51c0](https://github.com/jbcom/yuka-kit/commit/4ed51c01d4f374838e8ca865cca1755a84a7f86c))
+* rename the package to yuka-kit and add the migration guide ([9b49eaf](https://github.com/jbcom/yuka-kit/commit/9b49eaf1f9b79e4267523dbe2bff60f452816098))
+
+
+### Bug Fixes
+
+* validate existing registry artifacts before release retries ([f7630ad](https://github.com/jbcom/yuka-kit/commit/f7630ad884a150b857e05fb012f2cec4547382eb))
+
+## [0.21.0](https://github.com/jbcom/yuka-kit/compare/0.20.2...0.21.0) (2026-10-06)
+
+
+### Features
+
+* add GOAP planning, hearing, perception memory, and light-scaled vision ([e97c255](https://github.com/jbcom/yuka-kit/commit/e97c255b4a16c3a28f91941c1ac1d0a8e61c16fd))
+* add hearing, per-target perception memory, and light-scaled vision ([bb048db](https://github.com/jbcom/yuka-kit/commit/bb048dbdc3cb37a9e41f09f6cc1f928ddc970a13))
+* add the goap entry point with a deterministic planner and Yuka executor ([bcc9134](https://github.com/jbcom/yuka-kit/commit/bcc913447ad087d8bea0e6117569b9b5915b9e8a))
+
+
+### Bug Fixes
+
+* harden GOAP failure snapshots, registry undo, and perception memory reads ([c406acc](https://github.com/jbcom/yuka-kit/commit/c406acc70c5bb42db6f4d17e740aae5dd498da36))
+* rank perception-memory eviction independently of evidence arrival order ([c58e0db](https://github.com/jbcom/yuka-kit/commit/c58e0db3e1484347a0c6f185ba96cb690b3df3a1))
+* stop GOAP plans from running revoked actions and retire composite steps fully ([48ff633](https://github.com/jbcom/yuka-kit/commit/48ff6333d7b62ccb487f1b9861afa0d58d8669b7))
+
 ## [0.20.2](https://github.com/jbcom/yuka-kit/compare/0.20.1...0.20.2) (2026-08-24)
 
 

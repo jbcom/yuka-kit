@@ -1,6 +1,6 @@
 /**
- * Steering-behavior group helpers (from pond-warfare's yuka-behaviors.ts,
- * genericized: weights configurable per call, defaults preserved).
+ * Steering-behavior group helpers: weights are configurable per call, with
+ * sensible defaults.
  */
 import { AlignmentBehavior, CohesionBehavior, ObstacleAvoidanceBehavior, SeparationBehavior, } from 'yuka';
 import type { GameEntity, Vehicle } from 'yuka';

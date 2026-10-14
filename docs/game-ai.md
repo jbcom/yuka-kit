@@ -22,7 +22,7 @@ import {
   setHealthPct,
   setTargetPosition,
   stepAI,
-} from '@jbdevprimary/yuka-kit';
+} from 'yuka-kit';
 
 const manager = createEntityManager();
 const brains = new BrainRegistry();
