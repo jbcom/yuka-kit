@@ -105,6 +105,8 @@ export function astar(
         return [];
     if (ex < 0 || ex >= gridW || ey < 0 || ey >= gridH)
         return [];
+    if (grid[sy][sx] !== 0 || grid[ey][ex] !== 0)
+        return [];
     if (sx === ex && sy === ey)
         return [[sx, sy]];
     const key = (x: number, y: number) => y * gridW + x;
