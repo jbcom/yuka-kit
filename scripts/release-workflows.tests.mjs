@@ -44,6 +44,28 @@ describe('release workflow contract', () => {
     assert.doesNotThrow(() => validateReleaseWorkflows(workflows));
   });
 
+  it('accepts an updated immutable release metadata upload pin', () => {
+    const updated = release.replace(/actions\/upload-artifact@[a-f0-9]{40}/g,
+      `actions/upload-artifact@${'a'.repeat(40)}`);
+    assert.notEqual(updated, release, 'mutation must change the current action pin');
+    assert.doesNotThrow(() => validateReleaseWorkflows({ ...workflows, release: updated }));
+  });
+
+  for (const ref of ['main', 'v7', 'a'.repeat(39), 'a'.repeat(41)]) {
+    it(`rejects non-immutable release metadata upload reference ${ref}`, () => {
+      const updated = release.replace(/actions\/upload-artifact@[a-f0-9]{40}/g,
+        `actions/upload-artifact@${ref}`);
+      assert.throws(() => validateReleaseWorkflows({ ...workflows, release: updated }),
+        /SHA-pinned release metadata upload/);
+    });
+  }
+
+  it('rejects an unpinned upload even when another upload is pinned', () => {
+    assert.throws(() => validateReleaseWorkflows({ ...workflows,
+      release: `${release}\n      - uses: actions/upload-artifact@main\n` }),
+      /SHA-pinned release metadata upload/);
+  });
+
   it('executes the aggregate gate against successful, skipped and failed jobs', () => {
     const gate = ci.slice(ci.indexOf('\n  gate:'));
     const code = gate.match(/node --input-type=module -e '([\s\S]*?)'/)[1];

@@ -4,6 +4,13 @@ const requireText = (source, text, label = text) => {
 const forbidText = (source, text, label = text) => {
   if (source.includes(text)) throw new Error(`workflow contract forbids ${label}`);
 };
+const requirePinnedAction = (source, action, label) => {
+  const escaped = action.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const references = [...source.matchAll(new RegExp(`uses: ${escaped}@([^\\s]+)`, 'g'))];
+  if (references.length === 0 || references.some(([, ref]) => !/^[a-f0-9]{40}$/.test(ref))) {
+    throw new Error(`workflow contract is missing ${label}`);
+  }
+};
 const requireOrder = (source, labels) => {
   let previous = -1;
   for (const label of labels) {
@@ -59,7 +66,7 @@ export const validateReleaseWorkflows = ({ ci, release, publish }) => {
   requireText(release, "if: steps.release.outputs.release_created == 'true'", 'record only a created release');
   requireText(release, 'RELEASE_TAG: ${{ steps.release.outputs.tag_name }}', 'actual created tag handoff');
   requireText(release, 'RELEASE_SHA: ${{ steps.release.outputs.sha }}', 'actual tagged SHA handoff');
-  requireText(release, 'actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02', 'SHA-pinned release metadata upload');
+  requirePinnedAction(release, 'actions/upload-artifact', 'SHA-pinned release metadata upload');
 
   requireText(publish, 'workflows: [CI, Release]', 'trusted workflow completion trigger');
   requireText(publish, 'branches: [main]', 'trusted main branch');

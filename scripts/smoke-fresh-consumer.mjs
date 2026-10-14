@@ -303,10 +303,26 @@ ${goapRuntimeCheck('ESM')}`);
 const { planGoap, GoapPlanGoal, GoapGoalEvaluator } = require('yuka-kit/goap');
 const { PerceptionMemory } = require('yuka-kit');
 ${goapRuntimeCheck('CJS')}`);
+  const soloRuntimeCheck = (label) => `
+for (const entry of [SoloCommandAdapter, runGovernedPlaythrough,
+  createAICommandDispatchEnvelope, validateStrictSoloAICommand]) {
+  if (typeof entry !== 'function') throw new Error('${label} Solo export failed');
+}
+`;
+  await writeFile(join(consumerDirectory, 'solo-esm.mjs'), `
+import { SoloCommandAdapter, runGovernedPlaythrough,
+  createAICommandDispatchEnvelope, validateStrictSoloAICommand } from 'yuka-kit/solo';
+${soloRuntimeCheck('ESM')}`);
+  await writeFile(join(consumerDirectory, 'solo-cjs.cjs'), `
+const { SoloCommandAdapter, runGovernedPlaythrough,
+  createAICommandDispatchEnvelope, validateStrictSoloAICommand } = require('yuka-kit/solo');
+${soloRuntimeCheck('CJS')}`);
   run(process.execPath, ['esm.mjs']);
   run(process.execPath, ['cjs.cjs']);
   run(process.execPath, ['goap-esm.mjs']);
   run(process.execPath, ['goap-cjs.cjs']);
+  run(process.execPath, ['solo-esm.mjs']);
+  run(process.execPath, ['solo-cjs.cjs']);
 
   run('npm', [
     'install', '--ignore-scripts', '--no-audit', '--no-fund',
