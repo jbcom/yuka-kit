@@ -96,14 +96,13 @@ export const validateReleaseWorkflows = ({ ci, release, publish }) => {
   requireText(publishJob, "      - if: steps.release.outputs.tag != ''\n        run: pnpm install --frozen-lockfile", 'tag-gated install');
   requireText(publishJob, "      - if: steps.release.outputs.tag != ''\n        run: pnpm verify", 'full gate before publication');
   requireText(publishJob, "      - name: Check the registry\n        id: registry\n        if: steps.release.outputs.tag != ''", 'tag-gated registry check');
-  requireText(publishJob, 'already on npm', 'skip already-published version');
-  requireText(publishJob, 'echo "publish=false"', 'skip output');
-  requireText(publishJob, 'E404', 'missing version distinguished from registry failure');
-  requireText(publishJob, 'echo "publish=true"', 'new version output');
+  requireText(publishJob, 'run: node scripts/verify-published-artifact.mjs --check', 'typed anonymous registry preflight');
   requireText(publishJob, 'node scripts/verify-published-artifact.mjs', 'published artifact identity and integrity');
   requireText(publishJob, "      - name: Publish\n        if: steps.registry.outputs.publish == 'true'\n        run: npm publish --access public --provenance", 'OIDC publication gated by registry');
   if (publishJob.split('run: npm publish').length !== 2) throw new Error('single publication command required');
   requireText(publishJob, "      - name: Verify public registry publication\n        if: steps.registry.outputs.publish == 'true'", 'anonymous post-publish verification');
-  requireText(publishJob, 'version --registry=https://registry.npmjs.org --userconfig=/dev/null', 'anonymous public registry lookup');
+  requireText(publishJob, 'run: node scripts/verify-published-artifact.mjs --wait', 'bounded anonymous processing verification');
+  forbidText(publishJob, 'npm view', 'ambiguous CLI registry lookup');
+  forbidText(publishJob, 'continue-on-error', 'ignored registry verification failure');
   requireOrder(publishJob, ['ref: ${{ steps.release.outputs.tag }}', 'pnpm install --frozen-lockfile', 'pnpm verify', 'id: registry', 'run: npm publish', 'Verify public registry publication']);
 };
