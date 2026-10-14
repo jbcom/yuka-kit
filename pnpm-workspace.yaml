@@ -2,5 +2,11 @@ packages:
   - .
   - docs
 
+overrides:
+  "source-map-js@": 1.2.2
+  "@tailwindcss/typography>postcss-selector-parser": 7.1.6
+  "satori>fflate": 0.7.5
+  "@shuding/opentype.js>fflate": 0.7.5
+
 allowBuilds:
   esbuild: true
