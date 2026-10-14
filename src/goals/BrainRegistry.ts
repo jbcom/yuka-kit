@@ -25,7 +25,20 @@ export function createBrain(
  */
 export class BrainRegistry {
     #brains = new Map<string, Think>();
+
+    /**
+     * Register a brain for an entity. Replacing a different brain terminates
+     * the previous lifecycle before the replacement can be ticked; registering
+     * the existing brain again is a no-op.
+     */
     register(entityId: string, brain: Think): void {
+        const previous = this.#brains.get(entityId);
+
+        if (previous === brain) {
+            return;
+        }
+
+        previous?.terminate();
         this.#brains.set(entityId, brain);
     }
     unregister(entityId: string): void {

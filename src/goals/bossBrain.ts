@@ -33,6 +33,25 @@ export interface BossEntity extends AIEntity {
     _bossPhase?: number;
     _activeBehavior?: BossBehavior;
 }
+
+function validateBossPhases(phases: readonly BossPhaseConfig[]): void {
+    if (phases.length === 0) {
+        throw new RangeError('BossBrain requires at least one phase');
+    }
+
+    let previousThreshold = Number.POSITIVE_INFINITY;
+    for (const phase of phases) {
+        const { healthThreshold } = phase;
+        if (!Number.isFinite(healthThreshold) || healthThreshold < 0 || healthThreshold > 1) {
+            throw new RangeError('BossBrain phase health threshold must be a finite number between 0 and 1');
+        }
+        if (healthThreshold >= previousThreshold) {
+            throw new RangeError('BossBrain phase health thresholds must be strictly descending');
+        }
+        previousThreshold = healthThreshold;
+    }
+}
+
 // ─── Goal evaluators — each returns a desirability score [0, 1] ──────────────
 /**
  * Orbit the target at attack range. Preferred in early phases when the boss
@@ -215,6 +234,7 @@ export class BossBrain extends Think {
     #phaseChangeCallbacks: Array<(phase: number) => void> = [];
     constructor(owner: GameEntity, phases: readonly BossPhaseConfig[]) {
         super(owner);
+        validateBossPhases(phases);
         this.phases = phases;
         const entity = owner as BossEntity;
         entity._brain = this;

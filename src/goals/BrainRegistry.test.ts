@@ -1,8 +1,21 @@
-import { describe, expect, it } from 'vitest';
-import { GameEntity, Think } from 'yuka';
+import { describe, expect, it, vi } from 'vitest';
+import { GameEntity, Goal, Think } from 'yuka';
 import { BrainRegistry, createBrain } from './BrainRegistry.js';
 import { WanderEvaluator } from './evaluators.js';
 import type { AIEntity } from './AIEntity.js';
+
+class TrackingGoal extends Goal {
+    updates = 0;
+    terminations = 0;
+
+    execute(): void {
+        this.updates += 1;
+    }
+
+    terminate(): void {
+        this.terminations += 1;
+    }
+}
 
 describe('createBrain', () => {
     it('builds a Think with the given evaluators and tags the entity back-reference', () => {
@@ -20,6 +33,13 @@ describe('createBrain', () => {
 });
 
 describe('BrainRegistry', () => {
+    function trackedBrain(): Think {
+        return {
+            execute: vi.fn(),
+            terminate: vi.fn(),
+        } as unknown as Think;
+    }
+
     it('registers, retrieves, and reports the size of registered brains', () => {
         const registry = new BrainRegistry();
         expect(registry.size).toBe(0);
@@ -35,12 +55,60 @@ describe('BrainRegistry', () => {
         expect(registry.get('missing')).toBeUndefined();
     });
 
-    it('unregister terminates and removes a registered brain', () => {
+    it('replaces an active brain by terminating it and ticking only its replacement', () => {
+        const registry = new BrainRegistry();
+        const previous = trackedBrain();
+        const replacement = trackedBrain();
+
+        registry.register('enemy-1', previous);
+        registry.updateAll();
+        registry.register('enemy-1', replacement);
+        registry.updateAll();
+
+        expect(previous.terminate).toHaveBeenCalledOnce();
+        expect(previous.execute).toHaveBeenCalledOnce();
+        expect(replacement.execute).toHaveBeenCalledOnce();
+        expect(registry.get('enemy-1')).toBe(replacement);
+    });
+
+    it('cleans up active Yuka subgoals before replacing a real brain', () => {
         const registry = new BrainRegistry();
         const entity = new GameEntity();
         const brain = createBrain(entity, []);
+        const activeGoal = new TrackingGoal(entity);
+        const replacement = trackedBrain();
+        brain.addSubgoal(activeGoal);
+
+        registry.register('enemy-1', brain);
+        registry.updateAll();
+        registry.register('enemy-1', replacement);
+        registry.updateAll();
+
+        expect(activeGoal.updates).toBe(1);
+        expect(activeGoal.terminations).toBe(1);
+        expect(brain.subgoals).toEqual([]);
+        expect(replacement.execute).toHaveBeenCalledOnce();
+    });
+
+    it('does not terminate or duplicate a brain registered under its existing id', () => {
+        const registry = new BrainRegistry();
+        const brain = trackedBrain();
+
+        registry.register('enemy-1', brain);
+        registry.register('enemy-1', brain);
+        registry.updateAll();
+
+        expect(brain.terminate).not.toHaveBeenCalled();
+        expect(brain.execute).toHaveBeenCalledOnce();
+        expect(registry.size).toBe(1);
+    });
+
+    it('unregister terminates and removes a registered brain', () => {
+        const registry = new BrainRegistry();
+        const brain = trackedBrain();
         registry.register('enemy-1', brain);
         registry.unregister('enemy-1');
+        expect(brain.terminate).toHaveBeenCalledOnce();
         expect(registry.size).toBe(0);
         expect(registry.get('enemy-1')).toBeUndefined();
     });
@@ -61,10 +129,14 @@ describe('BrainRegistry', () => {
 
     it('reset terminates and clears every registered brain', () => {
         const registry = new BrainRegistry();
-        registry.register('a', createBrain(new GameEntity(), []));
-        registry.register('b', createBrain(new GameEntity(), []));
+        const brainA = trackedBrain();
+        const brainB = trackedBrain();
+        registry.register('a', brainA);
+        registry.register('b', brainB);
         expect(registry.size).toBe(2);
         registry.reset();
+        expect(brainA.terminate).toHaveBeenCalledOnce();
+        expect(brainB.terminate).toHaveBeenCalledOnce();
         expect(registry.size).toBe(0);
         expect(registry.get('a')).toBeUndefined();
     });

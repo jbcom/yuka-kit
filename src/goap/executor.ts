@@ -289,12 +289,25 @@ export function validateGoapPlanSnapshot(snapshot: unknown): GoapPlanSnapshot {
     if (!STATUSES.includes(status)) {
         throw new TypeError('GOAP plan snapshot status must be inactive, active, completed, or failed');
     }
+    const step = requireIntegerInRange(record.step, 0, plan.length, 'GOAP plan snapshot step');
+    if (status === 'active' && (plan.length === 0 || step >= plan.length)) {
+        throw new TypeError('GOAP snapshot step has no remaining action to resume');
+    }
+    if (status === 'inactive' && plan.length > 0 && step >= plan.length) {
+        throw new TypeError('GOAP snapshot step has no remaining action to resume');
+    }
+    if (status === 'completed' && step !== plan.length) {
+        throw new TypeError('A completed GOAP plan snapshot must have no unfinished actions');
+    }
+    if (status === 'failed' && (plan.length !== 0 || step !== 0)) {
+        throw new TypeError('A failed GOAP plan snapshot must have no plan progress');
+    }
     return {
         schema: 'arcade-ai-yuka-goap-plan',
         version: 1,
         goalId: requireNonEmptyString(record.goalId, 'GOAP plan snapshot goalId'),
         plan,
-        step: requireIntegerInRange(record.step, 0, plan.length, 'GOAP plan snapshot step'),
+        step,
         replans: requireIntegerInRange(record.replans, 0, MAX_REPLANS_LIMIT, 'GOAP plan snapshot replans'),
         status,
     };

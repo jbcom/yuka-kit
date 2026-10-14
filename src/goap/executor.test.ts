@@ -352,6 +352,9 @@ describe('GoapPlanGoal persistence', () => {
             [{ ...good, replans: 3 }, /exceed maxReplans 2/],
             [{ ...good, step: 3 }, /no remaining action/],
             [{ ...good, step: 4 }, /step must be an integer from 0 through 3/],
+            [{ ...good, status: 'completed' }, /completed GOAP plan snapshot must have no unfinished actions/],
+            [{ ...good, plan: [], step: 0 }, /no remaining action to resume/],
+            [{ ...good, status: 'failed' }, /failed GOAP plan snapshot must have no plan progress/],
             [{ ...good, schema: 'other' }, /Unsupported GOAP plan snapshot/],
             [{ ...good, version: 2 }, /Unsupported GOAP plan snapshot/],
             [{ ...good, status: 'paused' }, /status must be/],
@@ -365,6 +368,76 @@ describe('GoapPlanGoal persistence', () => {
             expect(goal.snapshot()).toEqual(good);
         }
         expect(validateGoapPlanSnapshot(JSON.parse(JSON.stringify(good)))).toEqual(good);
+    });
+
+    it('rejects status and progress combinations that execution cannot emit', () => {
+        const goal = new GoapPlanGoal(
+            Object.assign(new Companion(), { facts: startFacts() }),
+            options(claimRegistry()),
+        );
+        goal.execute();
+        const active = goal.snapshot();
+
+        expect(() => validateGoapPlanSnapshot({ ...active, status: 'completed' }))
+            .toThrow(/completed GOAP plan snapshot must have no unfinished actions/);
+        expect(() => validateGoapPlanSnapshot({ ...active, plan: [], step: 0 }))
+            .toThrow(/no remaining action to resume/);
+        expect(() => validateGoapPlanSnapshot({ ...active, status: 'failed' }))
+            .toThrow(/failed GOAP plan snapshot must have no plan progress/);
+    });
+
+    it('round-trips every status execution can serialize', () => {
+        const registry = claimRegistry({ extinguish: { duration: 3 } });
+
+        const inactive = new GoapPlanGoal(new Companion(), options(registry));
+        const inactiveSnapshot = JSON.parse(JSON.stringify(inactive.snapshot()));
+        const restoredInactive = new GoapPlanGoal(new Companion(), options(registry));
+        restoredInactive.restore(inactiveSnapshot);
+        expect(restoredInactive.snapshot()).toEqual(inactiveSnapshot);
+
+        const activeOwner = Object.assign(new Companion(), { facts: startFacts() });
+        const active = new GoapPlanGoal(activeOwner, options(registry));
+        active.execute();
+        active.terminate();
+        const activeSnapshot = JSON.parse(JSON.stringify(active.snapshot()));
+        expect(activeSnapshot).toMatchObject({ status: 'active', plan: ['approach', 'extinguish', 'claim'], step: 1 });
+        const restoredActive = new GoapPlanGoal(
+            Object.assign(new Companion(), { facts: { ...activeOwner.facts } }),
+            options(registry),
+        );
+        restoredActive.restore(activeSnapshot);
+        expect(restoredActive.inactive()).toBe(true);
+        runUntilSettled(restoredActive);
+        expect(restoredActive.completed()).toBe(true);
+
+        const completedOwner = Object.assign(new Companion(), { facts: startFacts() });
+        const completed = new GoapPlanGoal(completedOwner, options(registry));
+        runUntilSettled(completed);
+        const completedSnapshot = JSON.parse(JSON.stringify(completed.snapshot()));
+        const restoredCompleted = new GoapPlanGoal(new Companion(), options(registry));
+        restoredCompleted.restore(completedSnapshot);
+        expect(restoredCompleted.snapshot()).toEqual(completedSnapshot);
+
+        const alreadySatisfied = new GoapPlanGoal(
+            Object.assign(new Companion(), { facts: { ...startFacts(), claimed: true } }),
+            options(registry),
+        );
+        alreadySatisfied.execute();
+        const alreadySatisfiedSnapshot = JSON.parse(JSON.stringify(alreadySatisfied.snapshot()));
+        expect(alreadySatisfiedSnapshot).toMatchObject({ status: 'completed', plan: [], step: 0 });
+        const restoredAlreadySatisfied = new GoapPlanGoal(new Companion(), options(registry));
+        restoredAlreadySatisfied.restore(alreadySatisfiedSnapshot);
+        expect(restoredAlreadySatisfied.snapshot()).toEqual(alreadySatisfiedSnapshot);
+
+        const failed = new GoapPlanGoal(
+            Object.assign(new Companion(), { facts: { ...startFacts(), targetKnown: false, torchLit: false } }),
+            options(registry),
+        );
+        failed.execute();
+        const failedSnapshot = JSON.parse(JSON.stringify(failed.snapshot()));
+        const restoredFailed = new GoapPlanGoal(new Companion(), options(registry));
+        restoredFailed.restore(failedSnapshot);
+        expect(restoredFailed.snapshot()).toEqual(failedSnapshot);
     });
 });
 
