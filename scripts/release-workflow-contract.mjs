@@ -1,3 +1,5 @@
+import { parse } from 'yaml';
+
 const requireText = (source, text, label = text) => {
   if (!source.includes(text)) throw new Error(`workflow contract is missing ${label}`);
 };
@@ -5,12 +7,15 @@ const forbidText = (source, text, label = text) => {
   if (source.includes(text)) throw new Error(`workflow contract forbids ${label}`);
 };
 const requirePinnedAction = (source, action, label) => {
-  const escaped = action.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const references = [...source.matchAll(new RegExp(`uses: ${escaped}@([^\\s]+)`, 'g'))];
+  const workflow = parse(source, { merge: true });
+  const references = Object.values(workflow.jobs ?? {})
+    .flatMap((job) => job.steps ?? [])
+    .map((step) => typeof step.uses === 'string' ? step.uses.trim() : '')
+    .filter((ref) => ref === action || ref.startsWith(`${action}@`));
   if (references.length === 0) {
     throw new Error(`workflow contract is missing ${label}`);
   }
-  if (references.some(([, ref]) => !/^[a-f0-9]{40}$/.test(ref))) {
+  if (references.some((ref) => !/^[a-f0-9]{40}$/.test(ref.slice(action.length + 1)))) {
     throw new Error(`workflow contract requires immutable SHA pin for ${label}`);
   }
 };

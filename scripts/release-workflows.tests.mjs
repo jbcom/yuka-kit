@@ -73,6 +73,27 @@ describe('release workflow contract', () => {
       /requires immutable SHA pin for SHA-pinned release metadata upload/);
   });
 
+  for (const step of [
+    '      - uses:  actions/upload-artifact@main\n',
+    '      - uses: "actions/upload-artifact@main"\n',
+    '      - { "uses": actions/upload-artifact@main }\n',
+    '      - uses: >-\n          actions/upload-artifact@main\n',
+    '      - &upload { uses: actions/upload-artifact@main }\n      - <<: *upload\n',
+  ]) {
+    it(`rejects an unpinned upload expressed as YAML: ${step.trim()}`, () => {
+      assert.throws(() => validateReleaseWorkflows({ ...workflows,
+        release: `${release}\n${step}` }), /requires immutable SHA pin/);
+    });
+  }
+
+  it('does not treat a commented pin as an immutable upload', () => {
+    const updated = release.replace(/actions\/upload-artifact@[a-f0-9]{40}/g,
+      'actions/upload-artifact@main');
+    assert.throws(() => validateReleaseWorkflows({ ...workflows,
+      release: `${updated}\n# uses: actions/upload-artifact@${'a'.repeat(40)}\n` }),
+      /requires immutable SHA pin/);
+  });
+
   it('executes the aggregate gate against successful, skipped and failed jobs', () => {
     const gate = ci.slice(ci.indexOf('\n  gate:'));
     const code = gate.match(/node --input-type=module -e '([\s\S]*?)'/)[1];
