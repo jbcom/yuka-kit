@@ -1,49 +1,42 @@
-# @jbdevprimary/yuka-kit
+# yuka-kit
+
+[![npm](https://img.shields.io/npm/v/yuka-kit)](https://www.npmjs.com/package/yuka-kit)
+[![CI](https://github.com/jbcom/yuka-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/jbcom/yuka-kit/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/yuka-kit)](LICENSE)
 
 Shared game-AI toolkit wrapping [yuka.js](https://mugen87.github.io/yuka/) for
 browser and Node games: steering helpers, combat FSM states, goal-driven
-`Think` brains with phase-aware boss AI, grid A\* pathfinding, physics-agnostic
-vision perception, deterministic encounter spawning, authored NPC routines,
-class-specific playthrough governors, and optional Koota/RPGJS Solo bridges.
+`Think` brains with phase-aware boss AI, a deterministic GOAP planner that runs
+plans as Yuka goals, grid A\* pathfinding, physics-agnostic vision (including
+light-scaled vision), hearing and per-target perception memory, deterministic
+encounter spawning, authored NPC routines, class-specific playthrough
+governors, and optional Koota/RPGJS Solo bridges.
 
 **Documentation:** [jonbogaty.com/yuka-kit](https://jonbogaty.com/yuka-kit/)
 for guided integration, API catalogue, persistence rules, and the agentic
 command boundary. The site also publishes `llms.txt` and `llms-full.txt` from
 the same reviewed documentation graph.
 
-This repository is the source of truth for the package. Version
-`0.1.0` restored the originally published artifact; `0.2.0` added the production
-systems needed by RPGJS Solo games, `0.3.0` added structured combat bindings,
-`0.4.0` added authoritative command-availability observations, `0.7.0`
-added versioned routine and combat-FSM state, `0.8.0` added actionable
-Yuka-arbitrated combat tactics, `0.14.0` makes Mage pack defense react to every
-nearby telegraph; `0.17.0` adds strict authored-state routine selection and
-public cross-map action intents; `0.18.0` adds the strict deterministic
-proposal and final-dispatch boundary; and `0.19.0` adds closed, atomic
-persistence validation for package-owned AI snapshots. Patch release `0.19.1`
-aligns the runtime dependency and complete release toolchain to their current
-Node 24-compatible versions and adds a fail-closed immutable release path. All
-releases retain the public Node.js `>=24` compatibility contract and pin the
-current underlying Yuka release. Repository verification and publication use
-the exact current Node.js 24 LTS toolchain recorded in `.nvmrc` and CI.
+This repository is the source of truth for the package; see
+[CHANGELOG.md](CHANGELOG.md) for what each release added. The public Node.js
+`>=22` compatibility contract and the exact peer on the current Yuka release
+hold across releases. Repository verification and publication use the Node.js
+26 toolchain recorded in `.nvmrc`, with CI covering Node.js 22, 24 and 26.
+Major-only selectors accept maintained patches without requiring an exact
+Node.js version. Odd-numbered, end-of-life lines are outside the support policy.
 
-Extracted and generalized from production yuka integrations, absorbing:
-
-- flocking/separation/obstacle-avoidance steering helpers
-- binary-heap grid A\* pathfinding + a goal/evaluator vocabulary
-- a raycast-perception → FSM pattern
-- waypoint path-following defaults
+Coming from an earlier name of this package? See [MIGRATION.md](MIGRATION.md).
 
 ## Install
 
 ```sh
-pnpm add @jbdevprimary/yuka-kit yuka
+pnpm add yuka-kit yuka
 # koota only if you use the ECS bridge:
 pnpm add koota
 ```
 
 `yuka` (`0.7.8`) is an exact peer dependency. `koota` is an **optional** peer — only
-needed for the `@jbdevprimary/yuka-kit/koota` entry point.
+needed for the `yuka-kit/koota` entry point.
 
 yuka ships no TypeScript types; this package bundles an ambient
 `declare module 'yuka'` that consumers get transitively. If your repo has its
@@ -58,7 +51,7 @@ Everything except `koota/` is ECS-agnostic and operates on plain yuka
 ### core
 
 ```ts
-import { createVehicle, createCombatVehicle, createEntityManager, manage, stepAI } from '@jbdevprimary/yuka-kit';
+import { createVehicle, createCombatVehicle, createEntityManager, manage, stepAI } from 'yuka-kit';
 
 const enemy = createCombatVehicle(
   { speed: 3 }, // any config object with a speed works (mass/maxForce optional)
@@ -77,8 +70,8 @@ stepAI(manager, dt, brainRegistry); // combat FSMs, steering/entities, then GOAP
 
 ### fsm
 
-`PatrolState`, `ChaseState`, `AttackState`, `DeadState`, `FleeState` — bok's
-combat states, parameterized (ranges, cooldowns, and transition state ids are
+`PatrolState`, `ChaseState`, `AttackState`, `DeadState`, `FleeState` — combat
+states, parameterized (ranges, cooldowns, and transition state ids are
 constructor options; targets injected via `setTarget`). `createFsm(vehicle,
 states, initial)` wires a StateMachine; `getStateName(fsm)` resolves the
 current state's registration id.
@@ -100,17 +93,17 @@ updates every managed combat FSM before steering; custom loops can call
 - `clearDirectionalBehaviors(vehicle)` — drops seek/flee/pursuit/wander, keeps group behaviors
 - one-liners: `seek`, `flee`, `arrive`, `pursuit`, `evade`, `wander` (add + return the behavior)
 - `followWaypoints(vehicle, waypoints, options?)` — Path + FollowPathBehavior +
-  OnPathBehavior with voxel-realms' tuned defaults; returns a handle with
+  OnPathBehavior with tuned defaults; returns a handle with
   `finished()`/`clear()`. Note yuka's `finished()` flips true when the index
   *reaches* the final waypoint (still traveling to it).
 
 ### goals
 
-- Entity-tag evaluators (bok style — the game loop refreshes
+- Entity-tag evaluators (the game loop refreshes
   `setTargetPosition(entity, pos)` / `setHealthPct(entity, pct)` each frame):
   `ChaseEvaluator`, `MeleeAttackEvaluator`, `KeepDistanceEvaluator`,
   `WanderEvaluator`, `FleeEvaluator`.
-- Getter-injected evaluators (goats-in-hell style):
+- Getter-injected evaluators (accessor functions passed at construction):
   `AggressionEvaluator`, `SurvivalEvaluator`, `BossPhaseEvaluator`.
 - `createBrain(entity, evaluators)` — Think + `_brain` back-reference tag.
 - `BrainRegistry` — per-world brain lifecycle (register/unregister/updateAll/reset).
@@ -127,16 +120,15 @@ updates every managed combat FSM before steering; custom loops can call
 (`melee`/`ranged`/`pack`/`ambush`/`boss`/`passive`) to evaluator bundles;
 `createBrainForType(entity, aiType, bossPhases?)` builds the brain (boss +
 phases ⇒ full `BossBrain`). Games keep their own content-id → AIType lookup
-(like bok's `ENEMY_AI_TYPES`).
+(for example a table keyed by enemy id).
 
 ### combat tactics
 
 `TacticalCombatAgent` turns melee, ranged, charge, and ambush observations
 into command-neutral `AgentIntent`s through Yuka `Think`/`GoalEvaluator`
 arbitration. Detection, attack bands, survival retreat, cooldown readiness,
-and each game's action payloads remain explicit inputs. The behavior model is
-extracted from A Good Old-Fashioned Adventure's authored enemy loop rather
-than duplicating that loop in every game.
+and each game's action payloads remain explicit inputs, so one tactics model
+serves every game rather than each reimplementing its own enemy loop.
 
 `BossTacticalAgent` composes the existing phase-aware `BossBrain` and converts
 its winning behavior into movement, melee, barrage, summon, or orbit intents.
@@ -172,8 +164,90 @@ cells start→end inclusive, `[]` when unreachable.
 - `hasAabbProjectileClearance2D(from, to, obstacles, options)` — strict
   radius-aware muzzle-to-impact clearance for ranged AI; unlike visibility,
   a projectile spawned inside a padded obstacle is blocked.
-- `applyPerception(seen, fsm, stateWhenSeen)` — the aethermoor raycast→FSM
+- `applyPerception(seen, fsm, stateWhenSeen)` — the raycast→FSM
   pattern: transition once on sighting.
+
+#### light-scaled vision
+
+Actors in darkness are harder to see. `lightScaledRange(light, { range,
+minRange?, exponent? })` maps a light level in `[0, 1]` to a vision range of
+`minRange + (range - minRange) * light ** exponent`. Two helpers compose it
+with the existing sensors:
+
+- `inLitVisionCone(origin, forward, target, { range, halfAngleRad, lightAt,
+  minRange?, exponent? })` — `inVisionCone` with the range taken from
+  `lightAt(target)`.
+- `createLitVisionSensor(raycast, { range, isTarget, lightAt, minRange?,
+  exponent? })` — `createVisionSensor` that casts toward a specific target
+  with the light-scaled range: `sensor.seesTarget(origin, target)` casts a
+  unit-length direction and skips the cast when the target is out of range;
+  `sensor.rangeFor(target)` exposes the range it would use. A co-located
+  target is always seen, as in `inVisionCone`.
+
+`lightAt` must return a finite number. Values outside `[0, 1]` are clamped, so
+a floodlight that reports `3` still means "fully lit". `minRange` covers
+senses that work in the dark, such as a dog that notices anything within two
+metres.
+
+#### hearing
+
+Noise is an event, not a ray. `NoiseEvent` is `{ position, loudness, kind,
+time, source? }`; `loudness` is the level at the reference distance.
+
+- `attenuateNoise(distance, options?)` — distance gain using the Web Audio
+  `PannerNode` distance models: `'inverse'` (default), `'linear'`, and
+  `'exponential'`, with `refDistance` (default `1`), `maxDistance` (default
+  `10000`, used by `'linear'`), and `rolloffFactor` (default `1`). An
+  `'exponential'` model with `rolloffFactor: 2` is the inverse-square law.
+- `perceiveNoise(listener, event, { threshold, ...distance options,
+  occlusion? })` — returns `{ event, perceived, distance, transmission }` when
+  `loudness × gain × transmission ≥ threshold`, else `null`. `occlusion(from,
+  to, event)` returns the fraction of sound that passes through walls, from `0`
+  (blocked) to `1` (clear). It is called only for noises that would be audible
+  without occlusion, so an expensive raycast is skipped for distant noises.
+- `createHearingSensor(options).hear(listener, events)` — every audible noise,
+  loudest first; ties break by most recent `time`, then `kind`, then `source`,
+  then input order, so the result is deterministic.
+- `NoiseBuffer({ ttl, capacity? })` — a world-owned list of recent noises:
+  `emit(event)`, `active(now)` (events with `now - ttl ≤ time ≤ now`), and
+  `prune(now)`. When full it drops the oldest event.
+
+Each listener has its own `threshold`, so a guard dog can hear what a digger
+misses.
+
+#### perception memory
+
+`AIMemory` (Koota) keeps one last-seen position. `PerceptionMemory` keeps a
+record per target and remembers both senses:
+
+```ts
+const memory = new PerceptionMemory({ halfLife: 8, forgetBelow: 0.05 });
+memory.recordSighting('mummy', mummy.position, now);           // confidence 1
+memory.recordNoise(heard); // targetId from heard.event.source, confidence 0.5
+const best = memory.strongest(now);    // highest decayed confidence
+const where = memory.lastKnownPosition('mummy', now); // newest of seen/heard
+```
+
+- `recordSighting(targetId, position, time, confidence = 1)` and
+  `recordNoise(heard, { targetId?, confidence? })` add evidence. A noise uses
+  its event's `time` and, unless `targetId` is given, its `source`; its default
+  confidence is the memory's `hearingConfidence` option (default `0.5`).
+- A record holds `lastSeen` (`position`, `time`), `lastHeard` (`position`,
+  `time`, `loudness`, `kind`), `lastSensedTime`, and `confidence`.
+- Confidence decays exponentially with `halfLife` seconds. It is computed on
+  read from the stored value, so reading never changes state. Sensing a
+  target again sets confidence to the larger of the decayed value and the new
+  one.
+- Records below `forgetBelow` are hidden from `get`, `recall`, and
+  `strongest`, and `prune(now)` deletes them. `capacity` (default `256`)
+  evicts the weakest record first.
+- Out-of-order events (a noise from earlier in the frame, after a sighting)
+  keep each field's newest value and never move time backwards.
+- `recall(now)` orders records by confidence, then recency, then `targetId`.
+- `memory.snapshot()` and `PerceptionMemory.restore(snapshot)` round-trip the
+  memory through JSON with the same closed, bounded validation as the other
+  snapshots. `validatePerceptionMemorySnapshot(value)` validates without
+  restoring.
 
 ### encounters
 
@@ -231,7 +305,7 @@ selection is a separate opt-in contract:
 import {
   RoutineAgent,
   type StateAwareRoutineSchedule,
-} from '@jbdevprimary/yuka-kit';
+} from 'yuka-kit';
 
 const schedule: StateAwareRoutineSchedule = {
   entries: [
@@ -342,7 +416,7 @@ import {
   deriveDeterministicIdentity,
   selectSemanticCommandProposal,
   SEMANTIC_COMMAND_PROPOSAL_SCHEMA,
-} from '@jbdevprimary/yuka-kit';
+} from 'yuka-kit';
 
 const streamId = deriveDeterministicIdentity('stream', [
   'npc-routine', 'policy:smith', 'entity:smith', 'scope:forge',
@@ -381,7 +455,7 @@ map to the engine's public guard action with `{ active: false }`. Observing
 startup telegraph, then release it through the public action before resuming
 movement.
 
-### RPGJS Solo (separate entry: `@jbdevprimary/yuka-kit/solo`)
+### RPGJS Solo (separate entry: `yuka-kit/solo`)
 
 `SoloCommandAdapter` maps the Yuka XZ plane to RPGJS Solo XY commands and
 forces `source: 'ai'`. `runGovernedPlaythrough()` repeatedly observes the real
@@ -405,7 +479,7 @@ payloads, and extra fields fail before Solo dispatch.
 import {
   createAICommandDispatchEnvelope,
   SoloCommandAdapter,
-} from '@jbdevprimary/yuka-kit/solo';
+} from 'yuka-kit/solo';
 
 const adapter = new SoloCommandAdapter(runtime);
 if (selected) {
@@ -431,8 +505,8 @@ legacy integrations, including their explicit `transfer-map` support. They do
 not claim the strict proposal guarantees.
 
 ```ts
-import { ClassGovernor } from '@jbdevprimary/yuka-kit';
-import { SoloCommandAdapter, runGovernedPlaythrough } from '@jbdevprimary/yuka-kit/solo';
+import { ClassGovernor } from 'yuka-kit';
+import { SoloCommandAdapter, runGovernedPlaythrough } from 'yuka-kit/solo';
 
 const governor = new ClassGovernor({
     className: 'hunter',
@@ -483,10 +557,130 @@ stepAI(entityManager, 1 / 60);
 bridge.dispatchToSolo(enemyVehicle, runtime.getEntity('slime'), combat.canMove('slime').available);
 ```
 
-### koota (separate entry: `@jbdevprimary/yuka-kit/koota`)
+### GOAP (separate entry: `yuka-kit/goap`)
+
+Goal-oriented action planning on top of Yuka's goal system. A `Think`
+evaluator picks *what* to do; the planner works out *how*, as a sequence of
+actions; the plan runs as Yuka goals, one action at a time.
 
 ```ts
-import { AIBridge, AIState, YukaRef, AIMemory, Intent, EnemyType, BossType } from '@jbdevprimary/yuka-kit/koota';
+import {
+  GoapActionRegistry, GoapGoalEvaluator, planGoap,
+} from 'yuka-kit/goap';
+
+const actions = new GoapActionRegistry<Companion>();
+actions.register({
+  id: 'approach-in-darkness', cost: 2,
+  preconditions: { targetKnown: true }, effects: { nearTarget: true },
+  createGoal: (owner) => new ApproachGoal(owner),
+});
+actions.register({
+  id: 'extinguish-torch', cost: 1,
+  preconditions: { nearTorch: true }, effects: { targetLit: false },
+  createGoal: (owner) => new ExtinguishGoal(owner),
+});
+actions.register({
+  id: 'claim', cost: 1,
+  preconditions: { nearTarget: true, targetLit: false, mana: { op: 'gte', value: 10 } },
+  effects: { targetClaimed: true },
+  createGoal: (owner) => new ClaimGoal(owner),
+});
+
+// An equipped item contributes actions; unequipping revokes them.
+const unequip = actions.contribute('item:sun-staff', [emitPulse]);
+
+brain.addEvaluator(new GoapGoalEvaluator({
+  goalId: 'claim',
+  goal: { targetClaimed: true },
+  registry: actions,
+  sense: (owner) => owner.worldState(),
+  desirability: (owner) => owner.role === 'hunt' ? 0.8 : 0.2,
+}));
+```
+
+**World state** is a flat record of `string | number | boolean` values.
+A **condition** is either a value (equality) or a predicate
+`{ op: 'eq' | 'neq', value }` / `{ op: 'lt' | 'lte' | 'gt' | 'gte', value:
+number }`. A missing key fails every condition except `neq`. **Effects** set
+values.
+
+**Actions** are `{ id, cost, preconditions, effects }`. `cost` is a
+non-negative number, or a function of the search state (so an action can cost
+more after an earlier step spent a resource). A function cost should declare
+`minCost`, the cheapest it can ever be; the planner throws if it returns less,
+because a wrong lower bound would make plans silently suboptimal.
+
+**`planGoap(start, goal, actions, { maxExpansions? })`** is A\* over world
+states. It returns `{ found: true, actions, cost, expanded }` with a cheapest
+plan, or `{ found: false, reason, expanded }` where `reason` is
+`'unreachable'` (the search space is exhausted) or `'expansion-limit'`
+(`maxExpansions`, default `2048`, was hit first). The heuristic, unsatisfied
+goal conditions divided by the most goal conditions any single action can
+fix, times the cheapest action cost, never overestimates, so returned plans
+are optimal. Ties are broken deterministically: actions expand in `id` order
+(UTF-16 code-unit comparison, not locale order), so the same action set
+returns the same plan whatever order it was registered in. Duplicate ids,
+negative or non-finite costs, and malformed conditions throw `TypeError`
+before the search starts.
+
+**`GoapActionRegistry<Owner>`** holds an agent's actions and their Yuka goal
+factories (`createGoal(owner)`). `register(definition, source = 'base')` and
+`contribute(source, definitions)` (all or nothing) return an undo function;
+`revoke(source)` removes everything a source added. An optional
+`isAvailable(owner)` hides an action at planning time, for checks that do not
+belong in world state. `actionsFor(owner)` lists the plannable actions in `id`
+order.
+
+**`GoapPlanGoal<Owner>`** is a Yuka `CompositeGoal` that plans on activation
+and runs the plan as one subgoal per action:
+
+- Before each step it senses the world again and checks that the step's
+  action is still registered (an unequipped item's actions stop at once), its
+  preconditions, and `isAvailable`. If they no longer hold, or the step's goal
+  fails, it replans from the current state, up to `maxReplans` (default `3`)
+  times, and then fails.
+- When the last step completes, it checks the goal against the sensed state.
+  If the goal does not hold yet, it replans.
+- A missing plan sets the goal to `FAILED`, and `lastFailure` records why,
+  so `Think` re-arbitrates on its next update.
+- `plan`, `step`, `currentActionId`, and `replans` expose progress, for
+  example for `bridge.writeIntent(entity, goal.currentActionId ?? '')`.
+
+**`GoapGoalEvaluator<Owner>`** is the `Think` integration. Its desirability
+comes from your `desirability(owner)` function. By default it scores `0` when
+no plan exists, so `Think` never picks an impossible goal; it plans once per
+arbitration and hands that plan to the goal. Picking the same `goalId` again
+while that goal is still running keeps the running plan instead of restarting
+it. The evaluator finds the brain through the `_brain` tag set by
+`createBrain`.
+
+**Persistence.** `goal.snapshot()` returns `{ schema:
+'arcade-ai-yuka-goap-plan', version: 1, goalId, plan: actionIds, step,
+replans, status }`. `goal.restore(snapshot)` validates it against the
+registry (unknown action ids, out-of-range steps, and a different `goalId`
+are rejected before anything changes) and resumes from the saved step on the
+next update. Restoring calls `terminate()` on a step goal that is already in
+flight and no other game code (`sense`, `createGoal`, and `isAvailable` wait
+until the plan resumes). The step's Yuka goal is created fresh when the plan
+resumes, the same step-level granularity as `restoreFsmState`. `validateGoapPlanSnapshot(value)` validates without
+restoring.
+
+**`pursueGoap(goal, steps, sense, { context, maxSteps, stallLimit, onStep?, signal?, maxExpansions? })`**
+is the asynchronous, frame-free counterpart of `GoapPlanGoal`, for an actor
+whose steps are awaited work rather than goals ticked by `update()` (a test
+driver playing a game through its real input, a bot calling a service). Each
+`GoapStep` is a `GoapAction` with `run(context): Promise<void>`. It senses,
+plans from what it sensed, runs only the plan's first step, and senses again,
+so the world decides every move. It resolves `{ reached: true, steps, last }`
+once the goal holds, or `{ reached: false, reason, steps, last }` with
+`no-plan`, `step-limit` (`maxSteps` taken), `stalled` (`stallLimit` steps
+running left the sensed state unchanged) or `aborted` (checked between steps;
+a running step is never interrupted). A step that throws rejects it.
+
+### koota (separate entry: `yuka-kit/koota`)
+
+```ts
+import { AIBridge, AIState, YukaRef, AIMemory, Intent, EnemyType, BossType } from 'yuka-kit/koota';
 
 const bridge = new AIBridge({ Position, Velocity, Health }); // YOUR game's traits
 
@@ -501,6 +695,21 @@ bridge.syncToKoota(vehicle, entity); // velocity + FSM state name back to koota
 instances, not POD — this is the load-bearing integration detail the package
 standardizes. `AIMemory` (last-seen position/time) and `Intent` (active goal
 name) have `rememberSighting`/`writeIntent` helpers on the bridge.
+
+Hearing and per-target memory have matching traits:
+
+- `AIHearing` — the last noise heard: position, time, perceived loudness, and
+  kind. Write it with `bridge.rememberNoise(entity, heard)`.
+- `AIPerceptionMemory` — a callback trait holding the entity's
+  `PerceptionMemory` instance.
+- `AIAwareness` — the strongest remembered target: `targetId`, `confidence`,
+  last known position and time, and `sense` (`'sight'`, `'hearing'`, or `''`).
+
+`bridge.syncPerceptionMemory(entity, now)` reads the entity's
+`PerceptionMemory`, writes the strongest record into `AIAwareness`, and keeps
+`AIMemory` and `AIHearing` in step with that record's last sighting and last
+noise. Render and animation systems read the traits; the memory stays the
+single source of truth.
 
 ## Development
 

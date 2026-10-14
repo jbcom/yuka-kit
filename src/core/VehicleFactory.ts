@@ -28,7 +28,7 @@ export interface CombatVehicleOptions {
 }
 /**
  * Create a combat-ready AIVehicle with the standard patrol/chase/attack/dead
- * FSM (bok's EnemyVehicleFactory, genericized off EnemyConfig).
+ * FSM.
  */
 export function createCombatVehicle(
     config: AIVehicleConfig,

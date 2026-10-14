@@ -1,7 +1,25 @@
 default_stages: [pre-commit]
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+        exclude: ^pnpm-lock\.yaml$
+      - id: check-yaml
+        files: ^pnpm-lock\.yaml$
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
   - repo: local
     hooks:
+      - id: conventional-commit
+        name: Conventional Commit message
+        entry: node scripts/check-commit-message.mjs
+        language: system
+        stages: [commit-msg]
       - id: typecheck
         name: TypeScript typecheck
         entry: pnpm typecheck

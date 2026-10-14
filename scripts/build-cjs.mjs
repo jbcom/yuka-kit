@@ -17,6 +17,17 @@ await Promise.all([
   build({
     absWorkingDir: root.pathname,
     bundle: true,
+    entryPoints: ['src/goap/index.ts'],
+    external: ['yuka'],
+    format: 'cjs',
+    outfile: 'dist/cjs/goap/index.js',
+    platform: 'node',
+    sourcemap: true,
+    target: 'node24',
+  }),
+  build({
+    absWorkingDir: root.pathname,
+    bundle: true,
     entryPoints: ['src/koota/index.ts'],
     external: ['koota', 'yuka'],
     format: 'cjs',

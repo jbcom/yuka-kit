@@ -1,7 +1,6 @@
 /**
  * Grid A* pathfinding with octile distance heuristic and binary min-heap
- * open set (from goats-in-hell — 3-5x faster than BFS on large grids).
- * yuka ships no first-class pathfinder for arbitrary grids; this fills that
+ * open set. yuka ships no first-class pathfinder for arbitrary grids; this fills that
  * gap. Interface: grid[y][x] === 0 means walkable. Inherently 2D — usable
  * standalone by both 2D and 3D (XZ-plane) games.
  *

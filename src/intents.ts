@@ -7,4 +7,3 @@ export type AgentIntent =
     | { kind: 'transfer-map'; mapId: string; position: Vec3Like }
     | { kind: 'stop' }
     | { kind: 'wait'; reason?: string };
-

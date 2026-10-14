@@ -1,17 +1,17 @@
 /**
  * Goal evaluators — each returns a desirability score [0, 1].
  *
- * Two wiring styles coexist deliberately (merged from bok + goats-in-hell):
+ * Two wiring styles coexist deliberately:
  * - Entity-tag evaluators (Chase/MeleeAttack/KeepDistance/Wander/Flee) read
  *   the AIEntity `_targetPosition`/`_healthPct` tags the game loop refreshes
- *   each frame — the style bok's presets are built on.
+ *   each frame; the style the preset tables are built on.
  * - Getter-injected evaluators (Aggression/Survival/BossPhase) take accessor
- *   functions at construction — goats-in-hell's style, for games that prefer
- *   pulling from their own stores over tagging entities.
+ *   functions at construction, for games that prefer pulling from their own
+ *   stores over tagging entities.
  */
 import { GoalEvaluator, type GameEntity } from 'yuka';
 import type { AIEntity } from './AIEntity.js';
-// ─── Entity-tag evaluators (bok) ─────────────────────────────────────────────
+// ─── Entity-tag evaluators ───────────────────────────────────────────────────
 /** Chase the target when nearby (but prefer attacking when very close). */
 export class ChaseEvaluator extends GoalEvaluator {
     calculateDesirability(owner: GameEntity): number {
@@ -91,7 +91,7 @@ export class FleeEvaluator extends GoalEvaluator {
         // Flee behavior activated by steering
     }
 }
-// ─── Getter-injected evaluators (goats-in-hell) ──────────────────────────────
+// ─── Getter-injected evaluators ──────────────────────────────────────────────
 /** Scores a constant aggression level scaled by characterBias. */
 export class AggressionEvaluator extends GoalEvaluator {
     #aggression;

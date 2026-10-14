@@ -1,10 +1,10 @@
 /// <reference path="./yuka.d.ts" />
 /**
- * @jbdevprimary/yuka-kit — shared game-AI toolkit over yuka.js.
+ * yuka-kit — shared game-AI toolkit over yuka.js.
  *
  * ECS-agnostic: everything here operates on plain yuka Vehicle/GameEntity
  * objects. The koota bridge lives behind the separate
- * `@jbdevprimary/yuka-kit/koota` entry point.
+ * `yuka-kit/koota` entry point.
  *
  * 2D games follow yuka's own documented convention: use Vector3 with y
  * pinned to 0 — there is no separate 2D/3D API split.
@@ -37,6 +37,40 @@ export { AggressionEvaluator, BossPhaseEvaluator, ChaseEvaluator, FleeEvaluator,
 export { astar } from './pathfinding/GridAStar.js';
 // perception
 export { type Aabb2Like, type AabbProjectileClearanceOptions, applyPerception, createVisionSensor, hasAabbLineOfSight2D, hasAabbProjectileClearance2D, inVisionCone, type Point2Like, type RaycastFn, segmentIntersectsAabb2D, type VisionSensor, type VisionSensorOptions, } from './perception/vision.js';
+export {
+    createLitVisionSensor,
+    inLitVisionCone,
+    lightScaledRange,
+    type LightScaledRangeOptions,
+    type LitVisionOptions,
+    type LitVisionSensor,
+    type LitVisionSensorOptions,
+} from './perception/vision.js';
+export {
+    attenuateNoise,
+    createHearingSensor,
+    NoiseBuffer,
+    perceiveNoise,
+    validateNoiseEvent,
+    type HeardNoise,
+    type HearingOptions,
+    type HearingSensor,
+    type NoiseAttenuationOptions,
+    type NoiseBufferOptions,
+    type NoiseDistanceModel,
+    type NoiseEvent,
+} from './perception/hearing.js';
+export {
+    PERCEPTION_MEMORY_CAPACITY_LIMIT,
+    PerceptionMemory,
+    validatePerceptionMemorySnapshot,
+    type HearingMemory,
+    type LastKnownPosition,
+    type PerceptionMemoryOptions,
+    type PerceptionMemoryRecord,
+    type PerceptionMemorySnapshot,
+    type SightingMemory,
+} from './perception/memory.js';
 // presets
 export { AI_TYPE_PRESETS, createBrainForType } from './presets/aiTypes.js';
 // production orchestration

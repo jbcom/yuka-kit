@@ -24,7 +24,7 @@ host can make that boundary inspectable and replayable.
 import {
   createAICommandDispatchEnvelope,
   validateAICommandDispatchEnvelope,
-} from '@jbdevprimary/yuka-kit/solo';
+} from 'yuka-kit/solo';
 
 const envelope = createAICommandDispatchEnvelope({
   proposal: {
