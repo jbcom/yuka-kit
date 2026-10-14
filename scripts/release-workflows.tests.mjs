@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { describe, it } from 'node:test';
 import { validateReleaseWorkflows } from './release-workflow-contract.mjs';
-import { assertPublishedArtifact } from './verify-published-artifact.mjs';
+import { assertPublishedArtifact, readPublishedVersion, verifyPublicVersion } from './verify-published-artifact.mjs';
 
 const ci = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
 const release = await readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
@@ -26,7 +26,7 @@ describe('release workflow contract', () => {
     assert.throws(() => assertPublishedArtifact(manifest, { ...published, dist: { integrity: 'sha512-ZGlmZmVyZW50' } }, { integrity }), /artifact differs/);
     assert.throws(() => assertPublishedArtifact(manifest, { ...published, dist: {} }, { integrity }), /artifact differs/);
     assert.throws(() => assertPublishedArtifact(manifest, published, {}), /local pack integrity is missing/);
-    assert.throws(() => validateReleaseWorkflows({ ci, release, publish: publish.replaceAll('node scripts/verify-published-artifact.mjs', '') }), /artifact identity and integrity/);
+    assert.throws(() => validateReleaseWorkflows({ ci, release, publish: publish.replaceAll('node scripts/verify-published-artifact.mjs', '') }), /registry preflight/);
   });
 
   it('supports all non-EOL Node lines with a major-only execution toolchain', () => {
@@ -133,10 +133,9 @@ describe('release workflow contract', () => {
     ['publish', 'id-token: write', 'id-token: none'],
     ['publish', '--provenance', ''],
     ['publish', '--access public', '--access restricted'],
-    ['publish', 'E404', 'E000'],
-    ['publish', 'echo "publish=false"', 'echo "publish=true"'],
+    ['publish', 'verify-published-artifact.mjs --check', 'verify-published-artifact.mjs'],
+    ['publish', 'verify-published-artifact.mjs --wait', 'verify-published-artifact.mjs'],
     ['publish', 'Verify public registry publication', 'No registry check'],
-    ['publish', '--userconfig=/dev/null', '--userconfig=./auth'],
     ['publish', "      - name: Publish\n        if: steps.registry.outputs.publish == 'true'", '      - name: Publish'],
     ['publish', 'registry-url: https://registry.npmjs.org', 'registry-url: https://redacted-private-registry.example'],
   ];
@@ -166,5 +165,140 @@ describe('release workflow contract', () => {
     const step = "      - if: steps.release.outputs.tag != ''\n        run: pnpm verify\n";
     const changed = publish.replace(step, '') + step;
     assert.throws(() => validateReleaseWorkflows({ ...workflows, publish: changed }), /out of order/);
+  });
+});
+
+
+describe('anonymous exact-version public registry verification', () => {
+  const packed = { integrity: 'sha512-YWJjZA==' };
+  const metadata = { name: manifest.name, version: manifest.version,
+    repository: manifest.repository, dist: packed };
+  const response = (status, data = metadata) => new Response(JSON.stringify(data), { status });
+
+  it('uses a fixed exact endpoint without credentials, redirects or a cache', async () => {
+    const oldToken = process.env.NODE_AUTH_TOKEN;
+    process.env.NODE_AUTH_TOKEN = 'must-not-be-sent';
+    try {
+      assert.deepEqual(await readPublishedVersion(manifest, { fetchImpl: async (url, options) => {
+        assert.equal(url, `https://registry.npmjs.org/yuka-kit/${manifest.version}`);
+        assert.equal(options.credentials, 'omit');
+        assert.equal(options.redirect, 'error');
+        assert.equal(options.cache, 'no-store');
+        assert.deepEqual(options.headers, { Accept: 'application/json', 'Cache-Control': 'no-cache' });
+        assert.ok(options.signal instanceof AbortSignal);
+        return response(200);
+      } }), metadata);
+    } finally {
+      if (oldToken === undefined) delete process.env.NODE_AUTH_TOKEN;
+      else process.env.NODE_AUTH_TOKEN = oldToken;
+    }
+  });
+
+  it('accepts ready metadata and permits a new publication only for HTTP 404', async () => {
+    assert.equal(await verifyPublicVersion(manifest, packed, { fetchImpl: async () => response(200) }), true);
+    assert.equal(await verifyPublicVersion(manifest, packed, { fetchImpl: async () => response(404) }), false);
+  });
+
+  it('waits for processing then verifies identity and bytes', async () => {
+    let elapsed = 0;
+    let calls = 0;
+    const logs = [];
+    assert.equal(await verifyPublicVersion(manifest, packed, {
+      waitMs: 30, intervalMs: 10, now: () => elapsed,
+      pause: async (ms) => { elapsed += ms; }, log: (line) => logs.push(line),
+      fetchImpl: async () => response(++calls < 3 ? 404 : 200),
+    }), true);
+    assert.equal(calls, 3);
+    assert.deepEqual(logs, ['Public npm version pending: HTTP 404; processing age 0ms.',
+      'Public npm version pending: HTTP 404; processing age 10ms.']);
+  });
+
+  it('fails at the deadline for a permanently missing version', async () => {
+    let elapsed = 0;
+    let calls = 0;
+    await assert.rejects(verifyPublicVersion(manifest, packed, {
+      waitMs: 25, intervalMs: 10, now: () => elapsed, log: () => {},
+      pause: async (ms) => { elapsed += ms; }, fetchImpl: async () => { calls++; return response(404); },
+    }), /processing deadline/);
+    assert.equal(elapsed, 25);
+    assert.equal(calls, 3);
+  });
+
+  it('counts transport time against the deadline even when metadata becomes ready', async () => {
+    let elapsed = 0;
+    await assert.rejects(verifyPublicVersion(manifest, packed, { waitMs: 20,
+      now: () => elapsed, fetchImpl: async () => { elapsed += 21; return response(200); },
+    }), /processing deadline/);
+  });
+
+  for (const stage of ['request', 'JSON']) {
+    for (const elapsedAtFailure of [19, 20]) {
+      it(`reports ${stage} errors ${elapsedAtFailure < 20 ? 'before' : 'at'} the deadline accurately`, async () => {
+        let elapsed = 0;
+        const failure = new Error(`${stage} failed`);
+        const fail = async () => { elapsed = elapsedAtFailure; throw failure; };
+        await assert.rejects(verifyPublicVersion(manifest, packed, {
+          waitMs: 20, now: () => elapsed,
+          fetchImpl: stage === 'request' ? fail : async () => ({ status: 200, json: fail }),
+          pause: async () => { assert.fail('errors must never wait'); },
+        }), elapsedAtFailure < 20 ? (error) => error === failure : /processing deadline exceeded/);
+      });
+    }
+  }
+
+  it('fails cleanly when the deadline expires before scheduling the pause', async () => {
+    let elapsed = 0;
+    await assert.rejects(verifyPublicVersion(manifest, packed, {
+      waitMs: 20, now: () => elapsed,
+      fetchImpl: async () => response(404),
+      log: () => { elapsed = 21; },
+      pause: async () => { assert.fail('an expired deadline must not schedule a pause'); },
+    }), /processing deadline exceeded/);
+  });
+
+  for (const status of [301, 401, 403, 429, 500, 503]) {
+    it(`fails closed immediately on HTTP ${status}`, async () => {
+      let calls = 0;
+      await assert.rejects(verifyPublicVersion(manifest, packed, { waitMs: 30, now: () => 0,
+        fetchImpl: async () => { calls++; return response(status); },
+        pause: async () => { assert.fail('must not wait for permanent registry errors'); },
+      }), new RegExp(`HTTP ${status}`));
+      assert.equal(calls, 1);
+    });
+  }
+
+  it('never treats null or array HTTP 200 metadata as a missing version', async () => {
+    for (const data of [null, []]) {
+      await assert.rejects(verifyPublicVersion(manifest, packed, { fetchImpl: async () => response(200, data) }), /invalid published metadata/);
+    }
+  });
+
+  it('fails closed on transport failure and malformed JSON', async () => {
+    await assert.rejects(verifyPublicVersion(manifest, packed, {
+      fetchImpl: async () => { throw new Error('transport failed'); },
+    }), /transport failed/);
+    await assert.rejects(verifyPublicVersion(manifest, packed, {
+      fetchImpl: async () => new Response('not JSON'),
+    }), SyntaxError);
+  });
+
+  for (const [field, changed] of [
+    ['name', { name: 'foreign' }], ['version', { version: '0.0.0' }],
+    ['repository', { repository: { url: 'https://example.com/foreign' } }],
+    ['artifact', { dist: { integrity: 'sha512-ZGlmZmVyZW50' } }],
+  ]) {
+    it(`fails closed on ${field} mismatch during processing`, async () => {
+      await assert.rejects(verifyPublicVersion(manifest, packed, { waitMs: 30, now: () => 0,
+        fetchImpl: async () => response(200, { ...metadata, ...changed }),
+        pause: async () => { assert.fail('must not wait on mismatched metadata'); },
+      }), new RegExp(`${field} differs`));
+    });
+  }
+
+  it('rejects package selectors that could escape the fixed endpoint', async () => {
+    const fetchImpl = async () => { assert.fail('invalid selectors must not be fetched'); };
+    for (const changed of [{ name: '../foreign' }, { name: 'https://example.com' }, { version: 'latest' }]) {
+      await assert.rejects(readPublishedVersion({ ...manifest, ...changed }, { fetchImpl }));
+    }
   });
 });

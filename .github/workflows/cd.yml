@@ -104,33 +104,10 @@ jobs:
       - name: Check the registry
         id: registry
         if: steps.release.outputs.tag != ''
-        run: |
-          package_name="$(node -p "require('./package.json').name")"
-          package_version="$(node -p "require('./package.json').version")"
-          if lookup="$(npm view "${package_name}@${package_version}" version --registry=https://registry.npmjs.org --userconfig=/dev/null 2>&1)"; then
-            node scripts/verify-published-artifact.mjs
-            echo "::notice::${package_name}@${package_version} is already on npm; skipping publication."
-            echo "publish=false" >> "$GITHUB_OUTPUT"
-          elif grep -q 'E404' <<<"${lookup}"; then
-            echo "publish=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "${lookup}" >&2
-            exit 1
-          fi
+        run: node scripts/verify-published-artifact.mjs --check
       - name: Publish
         if: steps.registry.outputs.publish == 'true'
         run: npm publish --access public --provenance
       - name: Verify public registry publication
         if: steps.registry.outputs.publish == 'true'
-        run: |
-          package_name="$(node -p "require('./package.json').name")"
-          package_version="$(node -p "require('./package.json').version")"
-          for attempt in 1 2 3 4 5 6; do
-            if npm view "${package_name}@${package_version}" version --registry=https://registry.npmjs.org --userconfig=/dev/null | grep -Fx "${package_version}"; then
-              node scripts/verify-published-artifact.mjs
-              exit 0
-            fi
-            if [ "$attempt" -lt 6 ]; then sleep 10; fi
-          done
-          echo "Published package was not visible in the public npm registry." >&2
-          exit 1
+        run: node scripts/verify-published-artifact.mjs --wait
