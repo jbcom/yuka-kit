@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.2](https://github.com/jbcom/yuka-kit/compare/1.1.1...1.1.2) (2026-10-14)
+
+
+### Bug Fixes
+
+* **ci:** report npm processing deadline boundaries clearly ([97c2a93](https://github.com/jbcom/yuka-kit/commit/97c2a93232f36ccdda9acbc3503d9abec965155b))
+* **ci:** verify npm publication through bounded processing wait ([fe5041a](https://github.com/jbcom/yuka-kit/commit/fe5041a43841027f9ad2690429cabd043b0e2f48))
+* **ci:** verify npm publication through bounded processing wait ([abdb5de](https://github.com/jbcom/yuka-kit/commit/abdb5decdc67ebdd697fdc642039ec120847318a))
+* **deps:** patch docs tooling security advisories ([80d4603](https://github.com/jbcom/yuka-kit/commit/80d4603a0b8aa43df162d2e56190f6d65b7bafe6))
+* **deps:** patch docs tooling security advisories ([6078715](https://github.com/jbcom/yuka-kit/commit/60787152a8303878e521b352b92342ebced104ed))
+
 ## [1.1.1](https://github.com/jbcom/yuka-kit/compare/1.1.0...1.1.1) (2026-10-14)
 
 
