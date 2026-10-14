@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.1](https://github.com/jbcom/yuka-kit/compare/1.1.0...1.1.1) (2026-10-14)
+
+
+### Bug Fixes
+
+* **ai:** validate saved state and clean up replaced brains ([d8fa2d4](https://github.com/jbcom/yuka-kit/commit/d8fa2d404549dd5253ed5472c4313cb142add878))
+* **ci:** accept immutable release action updates ([47b9378](https://github.com/jbcom/yuka-kit/commit/47b93783e542b7d802bd10b7ddf1552ed3551c0a))
+* **ci:** distinguish missing and unpinned actions ([701605e](https://github.com/jbcom/yuka-kit/commit/701605e20c4ab5dd3709b39b4b6a0a3582b5f13e))
+* **ci:** parse YAML action references before validating pins ([e5ab782](https://github.com/jbcom/yuka-kit/commit/e5ab78262009a0abaa39c448158fe649870210be))
+* reject blocked path endpoints and verify packed metadata ([4d1dd25](https://github.com/jbcom/yuka-kit/commit/4d1dd254d2b3fe352f74e42762f733b8cea06605))
+* validate AI state, lifecycle, and grid paths ([10f6c84](https://github.com/jbcom/yuka-kit/commit/10f6c84f6ca74473511749d1cecf7c2bd64db3fb))
+
 ## [1.1.0](https://github.com/jbcom/yuka-kit/compare/1.0.1...1.1.0) (2026-10-10)
 
 

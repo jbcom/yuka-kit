@@ -1,8 +1,23 @@
+import { parse } from 'yaml';
+
 const requireText = (source, text, label = text) => {
   if (!source.includes(text)) throw new Error(`workflow contract is missing ${label}`);
 };
 const forbidText = (source, text, label = text) => {
   if (source.includes(text)) throw new Error(`workflow contract forbids ${label}`);
+};
+const requirePinnedAction = (source, action, label) => {
+  const workflow = parse(source, { merge: true });
+  const references = Object.values(workflow.jobs ?? {})
+    .flatMap((job) => job.steps ?? [])
+    .map((step) => typeof step.uses === 'string' ? step.uses.trim() : '')
+    .filter((ref) => ref === action || ref.startsWith(`${action}@`));
+  if (references.length === 0) {
+    throw new Error(`workflow contract is missing ${label}`);
+  }
+  if (references.some((ref) => !/^[a-f0-9]{40}$/.test(ref.slice(action.length + 1)))) {
+    throw new Error(`workflow contract requires immutable SHA pin for ${label}`);
+  }
 };
 const requireOrder = (source, labels) => {
   let previous = -1;
@@ -59,7 +74,7 @@ export const validateReleaseWorkflows = ({ ci, release, publish }) => {
   requireText(release, "if: steps.release.outputs.release_created == 'true'", 'record only a created release');
   requireText(release, 'RELEASE_TAG: ${{ steps.release.outputs.tag_name }}', 'actual created tag handoff');
   requireText(release, 'RELEASE_SHA: ${{ steps.release.outputs.sha }}', 'actual tagged SHA handoff');
-  requireText(release, 'actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02', 'SHA-pinned release metadata upload');
+  requirePinnedAction(release, 'actions/upload-artifact', 'SHA-pinned release metadata upload');
 
   requireText(publish, 'workflows: [CI, Release]', 'trusted workflow completion trigger');
   requireText(publish, 'branches: [main]', 'trusted main branch');

@@ -128,6 +128,43 @@ describe('EnrageEvaluator', () => {
 });
 
 describe('BossBrain evaluator composition', () => {
+    it('rejects an empty phase list before tagging the owner', () => {
+        const boss = new GameEntity() as BossEntity;
+
+        expect(() => new BossBrain(boss, [])).toThrow(/at least one phase/i);
+        expect(boss._brain).toBeUndefined();
+        expect(boss._bossPhase).toBeUndefined();
+    });
+
+    it.each([
+        { healthThreshold: -0.01, description: 'below zero' },
+        { healthThreshold: 1.01, description: 'above one' },
+        { healthThreshold: Number.NaN, description: 'not finite' },
+        { healthThreshold: Number.POSITIVE_INFINITY, description: 'infinite' },
+    ])('rejects a phase threshold $description', ({ healthThreshold }) => {
+        const boss = new GameEntity() as BossEntity;
+
+        expect(() => new BossBrain(boss, [
+            { healthThreshold, attacks: [{ type: 'melee' }] },
+        ])).toThrow(/health threshold/i);
+        expect(boss._brain).toBeUndefined();
+        expect(boss._bossPhase).toBeUndefined();
+    });
+
+    it.each([
+        [0.5, 0.75],
+        [0.5, 0.5],
+    ])('rejects phase thresholds %s and %s that are not strictly descending before tagging the owner', (first, second) => {
+        const boss = new GameEntity() as BossEntity;
+
+        expect(() => new BossBrain(boss, [
+            { healthThreshold: first, attacks: [{ type: 'melee' }] },
+            { healthThreshold: second, attacks: [{ type: 'ranged' }] },
+        ])).toThrow(/strictly descending/i);
+        expect(boss._brain).toBeUndefined();
+        expect(boss._bossPhase).toBeUndefined();
+    });
+
     it('omits RetreatAndSummonEvaluator when no phase has a summon attack', () => {
         const boss = new GameEntity();
         const brain = new BossBrain(boss, [{ healthThreshold: 1, attacks: [{ type: 'melee' }] }]);

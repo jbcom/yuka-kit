@@ -43,6 +43,22 @@ executes those intents; it remains responsible for damage, spawning, collision,
 animation, and presentation. This separation keeps gameplay authored locally
 while allowing decision behavior to be tested independently.
 
+## Brain lifecycle
+
+Registering a different brain under an existing entity ID terminates the old
+brain, including its active subgoals, before replacing it. Registering the same
+brain under that ID again is a no-op. `unregister` and `reset` terminate the
+brains they remove.
+
+`BossBrain` requires at least one phase. Health thresholds must be finite
+numbers between zero and one, in strictly descending order. Invalid phase
+configuration throws before the owner receives any brain or phase tags.
+
+GOAP snapshots must agree with their progress: active plans need a remaining
+action, completed plans have consumed all actions, and failed plans carry no
+plan progress. Already-satisfied goals may complete with an empty plan.
+Invalid snapshots are rejected before an existing executor is changed.
+
 ## Intent boundary
 
 `TacticalCombatAgent` and `BossTacticalAgent` return command-neutral
