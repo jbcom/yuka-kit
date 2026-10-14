@@ -10,6 +10,18 @@ describe('astar', () => {
         expect(astar(grid, 1, 1, 1, 1)).toEqual([[1, 1]]);
     });
 
+    it('returns [] when the start cell is blocked', () => {
+        expect(astar([[1, 0]], 0, 0, 1, 0)).toEqual([]);
+    });
+
+    it('returns [] when the end cell is blocked', () => {
+        expect(astar([[0, 1]], 0, 0, 1, 0)).toEqual([]);
+    });
+
+    it('returns [] when the same start and end cell is blocked', () => {
+        expect(astar([[1]], 0, 0, 0, 0)).toEqual([]);
+    });
+
     it('returns [] for an empty grid', () => {
         expect(astar([], 0, 0, 0, 0)).toEqual([]);
     });

@@ -247,6 +247,10 @@ void legacyMinuteArithmetic;
   );
 
   await writeFile(join(consumerDirectory, 'esm.mjs'), `
+import packageMetadata from 'yuka-kit/package.json' with { type: 'json' };
+if (packageMetadata.name !== 'yuka-kit' || packageMetadata.version !== '${packResult[0].version}') {
+  throw new Error('ESM package metadata export failed');
+}
 import {
   deriveDeterministicIdentity,
   EncounterDirector,
@@ -266,6 +270,10 @@ if (new TacticalCombatAgent({ tactic: 'melee', detectionRange: 5, attackRange: 1
 }).behavior !== 'attack') throw new Error('ESM tactical export failed');
 `);
   await writeFile(join(consumerDirectory, 'cjs.cjs'), `
+const packageMetadata = require('yuka-kit/package.json');
+if (packageMetadata.name !== 'yuka-kit' || packageMetadata.version !== '${packResult[0].version}') {
+  throw new Error('CJS package metadata export failed');
+}
 const {
   deriveDeterministicIdentity,
   EncounterDirector,
