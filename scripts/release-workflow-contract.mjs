@@ -7,8 +7,11 @@ const forbidText = (source, text, label = text) => {
 const requirePinnedAction = (source, action, label) => {
   const escaped = action.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const references = [...source.matchAll(new RegExp(`uses: ${escaped}@([^\\s]+)`, 'g'))];
-  if (references.length === 0 || references.some(([, ref]) => !/^[a-f0-9]{40}$/.test(ref))) {
+  if (references.length === 0) {
     throw new Error(`workflow contract is missing ${label}`);
+  }
+  if (references.some(([, ref]) => !/^[a-f0-9]{40}$/.test(ref))) {
+    throw new Error(`workflow contract requires immutable SHA pin for ${label}`);
   }
 };
 const requireOrder = (source, labels) => {
