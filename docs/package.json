@@ -8,6 +8,6 @@
     "dev": "sourcey dev"
   },
   "devDependencies": {
-    "sourcey": "3.9.2"
+    "sourcey": "3.9.4"
   }
 }
