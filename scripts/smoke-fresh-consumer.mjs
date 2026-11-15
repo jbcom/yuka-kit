@@ -71,6 +71,7 @@ try {
   }, null, 2));
   await writeFile(join(consumerDirectory, 'consumer.ts'), `
 import {
+  ConvexHull, Polyhedron, SAT, Vector3,
   createCombatVehicle,
   deriveDeterministicIdentity,
   EncounterDirector,
@@ -107,6 +108,15 @@ import {
   type GoapWorldState,
 } from 'yuka-kit/goap';
 import { GameEntity, Goal, Think } from 'yuka';
+
+const convex = new ConvexHull().fromPoints([
+  new Vector3(0, 0, 0), new Vector3(1, 0, 0),
+  new Vector3(0, 1, 0), new Vector3(0, 0, 1),
+]);
+const convexPolyhedron: Polyhedron = convex;
+const convexOverlap: boolean = new SAT().intersects(convexPolyhedron, convex);
+const convexContains: boolean = convex.containsPoint(new Vector3(0.1, 0.1, 0.1));
+if (!convexOverlap || !convexContains || !convex.intersectsConvexHull(convex)) throw new Error('typed convex export failed');
 
 class Companion extends GameEntity {
   facts: Record<string, string | number | boolean> = { near: false };
@@ -240,6 +250,26 @@ if (selection.selected) {
 void legacyMinuteArithmetic;
 `);
   run(join(consumerDirectory, 'node_modules/.bin/tsc'), ['--project', 'tsconfig.json']);
+  await writeFile(join(consumerDirectory, 'convex-consumer.cts'), `
+import { ConvexHull, Polyhedron, SAT, Vector3 } from 'yuka-kit';
+const hull: Polyhedron = new ConvexHull().fromPoints([
+  new Vector3(0, 0, 0), new Vector3(1, 0, 0),
+  new Vector3(0, 1, 0), new Vector3(0, 0, 1),
+]);
+const intersects: boolean = new SAT().intersects(hull, hull);
+void intersects;
+`);
+  await writeFile(join(consumerDirectory, 'convex-cjs-tsconfig.json'), JSON.stringify({
+    compilerOptions: {
+      strict: true,
+      noEmit: true,
+      target: 'ES2022',
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+    },
+    include: ['convex-consumer.cts'],
+  }, null, 2));
+  run(join(consumerDirectory, 'node_modules/.bin/tsc'), ['--project', 'convex-cjs-tsconfig.json']);
   assert.equal(
     existsSync(join(consumerDirectory, 'node_modules/koota')),
     false,

@@ -8,6 +8,13 @@ const soloEsm = await import('../dist/esm/solo/index.js');
 const soloCjs = require('../dist/cjs/solo/index.js');
 
 for (const entry of [esm, cjs]) {
+  const hull = new entry.ConvexHull().fromPoints([
+    new entry.Vector3(0, 0, 0), new entry.Vector3(1, 0, 0),
+    new entry.Vector3(0, 1, 0), new entry.Vector3(0, 0, 1),
+  ]);
+  assert.ok(hull instanceof entry.Polyhedron);
+  assert.equal(hull.intersectsConvexHull(hull), true);
+  assert.equal(new entry.SAT().intersects(hull, hull), true);
   assert.equal(typeof entry.createEntityManager, 'function');
   assert.equal(typeof entry.createBrain, 'function');
   assert.equal(typeof entry.astar, 'function');
