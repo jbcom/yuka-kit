@@ -9,6 +9,8 @@
  * 2D games follow yuka's own documented convention: use Vector3 with y
  * pinned to 0 — there is no separate 2D/3D API split.
  */
+// Existing Yuka primitives, with their upstream runtime semantics.
+export { ConvexHull, Polyhedron, SAT, Vector3 } from 'yuka';
 // core
 export { createEntityManager, manage, stepAI, } from './core/EntityManager.js';
 export type { AIType, AIVehicle, AIVehicleConfig, Vec3Like } from './core/types.js';

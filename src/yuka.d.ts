@@ -51,6 +51,64 @@ declare module 'yuka' {
     squaredDistanceTo(v: Vector3): number;
   }
 
+  /** Plane data used by convex-hull faces. */
+  export class Plane {
+    normal: Vector3;
+    constant: number;
+    constructor(normal?: Vector3, constant?: number);
+    distanceToPoint(point: Vector3): number;
+  }
+
+  export class HalfEdge {
+    vertex: Vector3;
+    next: HalfEdge | null;
+    prev: HalfEdge | null;
+    twin: HalfEdge | null;
+    polygon: Polygon | null;
+    constructor(vertex?: Vector3);
+    tail(): Vector3 | null;
+    head(): Vector3;
+    length(): number;
+    squaredLength(): number;
+    linkOpponent(edge: HalfEdge): this;
+    getDirection(result: Vector3): Vector3;
+  }
+
+  export class Polygon {
+    centroid: Vector3;
+    edge: HalfEdge | null;
+    plane: Plane;
+    fromContour(points: Vector3[]): this;
+    computeCentroid(): this;
+    distanceToPoint(point: Vector3): number;
+    getContour(result: Vector3[]): Vector3[];
+  }
+
+  /** Convex, closed topology is a caller precondition for SAT. */
+  export class Polyhedron {
+    faces: Polygon[];
+    edges: HalfEdge[];
+    vertices: Vector3[];
+    centroid: Vector3;
+    computeCentroid(): this;
+    computeUniqueVertices(): this;
+    computeUniqueEdges(): this;
+  }
+
+  export class ConvexHull extends Polyhedron {
+    mergeFaces: boolean;
+    /** Use a fresh hull and at least four finite, noncoplanar points. */
+    fromPoints(points: Vector3[]): this;
+    containsPoint(point: Vector3): boolean;
+    /** Static closed-solid overlap, including containment and touching. */
+    intersectsConvexHull(convexHull: ConvexHull): boolean;
+  }
+
+  export class SAT {
+    /** Static convex closed-solid overlap; does not validate inputs or sweep. */
+    intersects(polyhedronA: Polyhedron, polyhedronB: Polyhedron): boolean;
+  }
+
   export class GameEntity {
     name: string;
     active: boolean;

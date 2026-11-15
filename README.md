@@ -48,6 +48,46 @@ Everything except `koota/` is ECS-agnostic and operates on plain yuka
 `Vehicle`/`GameEntity` objects. 2D games follow yuka's own convention: use
 `Vector3` with `y` pinned to 0 — there is no separate 2D API.
 
+### convex closed-solid intersection
+
+The root exports `Vector3`, `ConvexHull`, `Polyhedron` and `SAT` directly from
+Yuka 0.7.8. These are the upstream classes, without a replacement solver.
+
+```ts
+import { ConvexHull, SAT, Vector3 } from 'yuka-kit';
+
+const tetrahedron = (x: number) => new ConvexHull().fromPoints([
+  new Vector3(x, 0, 0), new Vector3(x + 1, 0, 0),
+  new Vector3(x, 1, 0), new Vector3(x, 0, 1),
+]);
+const a = tetrahedron(0);
+const b = tetrahedron(2);
+const overlaps: boolean = a.intersectsConvexHull(b); // false
+const sameResult: boolean = new SAT().intersects(a, b); // false
+```
+
+These predicates test **static convex closed solids**, including full containment
+and touching boundaries. They do not compute penetration depth, contact normals,
+swept collision, time of impact, ballistic clearance or a physics response.
+Rebuild with transformed points in a common coordinate frame for another pose;
+mutating vertices alone leaves face planes and centroids stale.
+
+Use a **fresh hull** for every `fromPoints` call, with at least four finite,
+noncoplanar points spanning a three-dimensional volume. Yuka does not validate
+finite coordinates. Fewer than four points logs an error and returns an unbuilt
+hull; coplanar input can throw a string. Empty or invalid hulls must never be
+passed to SAT: its boolean is not a validity result. Validate input coordinates
+and dimensionality before construction. Callers needing an asset geometry
+qualification must also inspect the resulting faces, vertices and halfedges:
+closed twin links, finite planes, outward winding and nonzero volume.
+
+`fromPoints` computes a convex enclosure: it does not preserve concavities or
+prove that the source mesh itself is watertight or convex. `Polyhedron` exposes
+upstream topology for qualified convex geometry; hand-authored faces require
+consistent outward planes, closed halfedge twins and current unique edges,
+vertices and centroids before SAT. No robustness tolerance beyond Yuka's own
+floating-point behavior is promised.
+
 ### core
 
 ```ts
