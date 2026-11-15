@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/jbcom/yuka-kit/compare/1.1.2...1.2.0) (2026-11-15)
+
+
+### Features
+
+* **pathfinding:** add bounded physical candidate routes ([2219603](https://github.com/jbcom/yuka-kit/commit/2219603889967219d32166ec29e439ab2881993a))
+* **pathfinding:** add bounded physical candidate routes ([d31c105](https://github.com/jbcom/yuka-kit/commit/d31c10539cc76227b4cae2ccf23d0a3937aa22df))
+
 ## [1.1.2](https://github.com/jbcom/yuka-kit/compare/1.1.1...1.1.2) (2026-10-14)
 
 
