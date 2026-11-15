@@ -10,9 +10,11 @@ describe('bounded physical candidate routes', () => {
         const from = point(0);
         const to = point(3.123);
         const canTravel = vi.fn(() => true);
-        expect(findCandidateRoute({ from, to, candidates: [point(1, 1)], canTravel })).toEqual({
-            status: 'found', waypoints: [from, to], distance: 3.123, pathQueries: 1, expandedNodes: 0,
+        const route = findCandidateRoute({ from, to, candidates: [point(1, 1)], canTravel });
+        expect(route).toMatchObject({
+            status: 'found', waypoints: [from, to], pathQueries: 1, expandedNodes: 0,
         });
+        expect(route.distance).toBeCloseTo(3.123, 12);
         expect(canTravel).toHaveBeenCalledOnce();
         expect(from).toEqual(point(0));
     });

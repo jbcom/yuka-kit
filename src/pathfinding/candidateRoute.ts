@@ -80,6 +80,9 @@ export function findCandidateRoute(options: CandidateRouteOptions): CandidateRou
                         outgoing.push(new NavEdge(index, target, Math.sqrt(dx * dx + dy * dy + dz * dz)));
                     }
                 }
+                // The budget is shared across this whole search and never replenished. Retain
+                // already checked edges on revisits; exhausted searches report budget-exceeded,
+                // never unreachable, unless those checked edges actually reach the target.
                 this.adjacency.set(index, outgoing);
             }
             edges.push(...outgoing);
