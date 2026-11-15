@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0](https://github.com/jbcom/yuka-kit/compare/1.2.0...1.3.0) (2026-11-15)
+
+
+### Features
+
+* expose upstream convex solid intersection API ([097cd66](https://github.com/jbcom/yuka-kit/commit/097cd666b036b31f133e957db507d3cc871dbfce))
+* expose upstream convex solid intersection API ([5b6fdda](https://github.com/jbcom/yuka-kit/commit/5b6fdda6350363096a4066bb04127608edc866d0))
+
+
+### Bug Fixes
+
+* select explicit CommonJS consumer project ([20a40d7](https://github.com/jbcom/yuka-kit/commit/20a40d772023ad884af57c89c9079782198c5252))
+
 ## [1.2.0](https://github.com/jbcom/yuka-kit/compare/1.1.2...1.2.0) (2026-11-15)
 
 
