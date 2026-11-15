@@ -8,6 +8,29 @@
  * yuka types transitively.
  */
 declare module 'yuka' {
+  export class NavNode {
+    index: number;
+    position: Vector3;
+    constructor(index?: number, position?: Vector3);
+  }
+  export class NavEdge {
+    from: number;
+    to: number;
+    cost: number;
+    constructor(from?: number, to?: number, cost?: number);
+  }
+  export class Graph {
+    digraph: boolean;
+    addNode(node: NavNode): this;
+    getNode(index: number): NavNode | null;
+    getEdgesOfNode(index: number, result: NavEdge[]): NavEdge[];
+  }
+  export class AStar {
+    found: boolean;
+    constructor(graph?: Graph, source?: number, target?: number);
+    search(): this;
+    getPath(): number[];
+  }
   export class Vector3 {
     x: number;
     y: number;
