@@ -259,10 +259,17 @@ const hull: Polyhedron = new ConvexHull().fromPoints([
 const intersects: boolean = new SAT().intersects(hull, hull);
 void intersects;
 `);
-  run(join(consumerDirectory, 'node_modules/.bin/tsc'), [
-    '--strict', '--noEmit', '--target', 'ES2022', '--module', 'NodeNext',
-    '--moduleResolution', 'NodeNext', 'convex-consumer.cts',
-  ]);
+  await writeFile(join(consumerDirectory, 'convex-cjs-tsconfig.json'), JSON.stringify({
+    compilerOptions: {
+      strict: true,
+      noEmit: true,
+      target: 'ES2022',
+      module: 'NodeNext',
+      moduleResolution: 'NodeNext',
+    },
+    include: ['convex-consumer.cts'],
+  }, null, 2));
+  run(join(consumerDirectory, 'node_modules/.bin/tsc'), ['--project', 'convex-cjs-tsconfig.json']);
   assert.equal(
     existsSync(join(consumerDirectory, 'node_modules/koota')),
     false,
