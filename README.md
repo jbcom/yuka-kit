@@ -150,6 +150,16 @@ const decision = archer.decide({
 
 ### pathfinding
 
+`findCandidateRoute({ from, to, candidates, canTravel, maxCandidates?, maxQueries? })`
+uses Yuka AStar over an ordered set of caller-supplied physical detour points.
+The directed `canTravel` callback must check the whole leg, including body size,
+support and obstacles. The result reports `found`, `unreachable` or
+`budget-exceeded`, checked waypoints, distance, path-query count and expanded
+nodes. Defaults cap candidates at 64 and clearance queries at 4096; accepted
+limits are 0–256 candidates and 1–65536 queries. A direct route costs one query.
+It never moves an actor or retains a path between calls. Candidate order is the
+deterministic tie order; callers own stable ordering and current geometry.
+
 `astar(grid, sx, sy, ex, ey)` — octile-heuristic, binary-min-heap A\* over
 `grid[y][x] === 0` walkability with corner-cut prevention. Returns `[x, y]`
 cells start→end inclusive, `[]` when unreachable.

@@ -35,6 +35,7 @@ export { BrainRegistry, createBrain } from './goals/BrainRegistry.js';
 export { AggressionEvaluator, BossPhaseEvaluator, ChaseEvaluator, FleeEvaluator, KeepDistanceEvaluator, MeleeAttackEvaluator, SurvivalEvaluator, WanderEvaluator, } from './goals/evaluators.js';
 // pathfinding
 export { astar } from './pathfinding/GridAStar.js';
+export { findCandidateRoute, type CandidateRouteOptions, type CandidateRouteResult } from './pathfinding/candidateRoute.js';
 // perception
 export { type Aabb2Like, type AabbProjectileClearanceOptions, applyPerception, createVisionSensor, hasAabbLineOfSight2D, hasAabbProjectileClearance2D, inVisionCone, type Point2Like, type RaycastFn, segmentIntersectsAabb2D, type VisionSensor, type VisionSensorOptions, } from './perception/vision.js';
 export {
